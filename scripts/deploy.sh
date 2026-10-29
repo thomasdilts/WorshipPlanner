@@ -57,6 +57,21 @@ fi
 npm run build
 
 echo "==> Migrate"
+# One-time: the 44 original migrations were squashed into 0001_01_01_000000_create_initial_schema.
+# A database that already ran the last original migration has that exact schema, so record the
+# squashed migration as run instead of letting it try to recreate existing tables. No-op afterwards.
+$PHP_BIN artisan tinker --execute '
+    $squashed = "0001_01_01_000000_create_initial_schema";
+    $lastOriginal = "2026_10_28_193651_add_whatsapp_template_to_message_templates_table";
+    $migrations = DB::table("migrations");
+    if (Schema::hasTable("migrations") && $migrations->clone()->where("migration", $lastOriginal)->exists() && ! $migrations->clone()->where("migration", $squashed)->exists()) {
+        DB::transaction(function () use ($squashed) {
+            DB::table("migrations")->delete();
+            DB::table("migrations")->insert(["migration" => $squashed, "batch" => 1]);
+        });
+        echo "Adopted squashed initial schema migration.\n";
+    }
+'
 $PHP_BIN artisan migrate --force
 
 echo "==> Optimize"
