@@ -1,0 +1,20 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "instrument sans",
+        "createdAt": "2026-10-22T08:46:30.883Z",
+        "reason": "user confirmed Taste editorial-greeting sheet + plan: Instrument Sans is the product face"
+      },
+      {
+        "rule": "overused-font",
+        "value": "instrument serif",
+        "createdAt": "2026-10-22T08:46:30.887Z",
+        "reason": "user confirmed Taste editorial-greeting sheet: serif for Persuade titles only"
+      }
+    ]
+  }
+}

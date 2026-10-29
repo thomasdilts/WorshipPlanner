@@ -1,0 +1,168 @@
+<?php
+
+namespace App\Filament\Navigation;
+
+use App\Filament\Pages\BibleSettings;
+use App\Filament\Pages\ChurchSettings;
+use App\Filament\Pages\ChurchStarter;
+use App\Filament\Pages\ManageModules;
+use App\Filament\Pages\MessagingSettings;
+use App\Filament\Pages\MyTasks;
+use App\Filament\Pages\MyUnavailability;
+use App\Filament\Pages\SmsMessagingSettings;
+use App\Filament\Pages\SongStatistics;
+use App\Filament\Pages\WhatsAppMessagingSettings;
+use App\Filament\Resources\Churches\ChurchResource;
+use App\Filament\Resources\EventMessages\EventMessageResource;
+use App\Filament\Resources\Events\EventResource;
+use App\Filament\Resources\Events\Pages\TaskSpreadsheet;
+use App\Filament\Resources\Languages\LanguageResource;
+use App\Filament\Resources\MessageTemplates\MessageTemplateResource;
+use App\Filament\Resources\Pictures\PictureResource;
+use App\Filament\Resources\Roles\RoleResource;
+use App\Filament\Resources\SharedFiles\SharedFileResource;
+use App\Filament\Resources\Songs\SongResource;
+use App\Filament\Resources\TaskTemplates\TaskTemplateResource;
+use App\Filament\Resources\Teams\TeamResource;
+use App\Filament\Resources\TeamTypes\TeamTypeResource;
+use App\Filament\Resources\Unavailabilities\UnavailabilityResource;
+use App\Filament\Resources\Users\UserResource;
+use Filament\Navigation\NavigationBuilder;
+use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
+use Filament\Support\Icons\Heroicon;
+
+use function Filament\Support\original_request;
+
+/**
+ * The single definition of the panel's primary navigation.
+ *
+ * Visibility comes from each destination's own canAccess(), which already encodes permission,
+ * team membership and module state. A group with one visible destination collapses into a plain item.
+ */
+class PanelNavigation
+{
+    public function __construct(private PanelAudience $audience) {}
+
+    public function build(NavigationBuilder $builder): NavigationBuilder
+    {
+        $builder->items($this->primaryItems());
+
+        $groups = [
+            $this->group(__('People & teams'), [
+                $this->forClass(TeamResource::class, __('Teams')),
+                $this->forClass(UserResource::class, __('People')),
+                $this->forClass(UnavailabilityResource::class, __('Unavailabilities'), Heroicon::OutlinedCalendarDays),
+                $this->forClass(TeamTypeResource::class, __('Team types')),
+                $this->forClass(EventMessageResource::class, __('Message history')),
+            ]),
+            $this->group(__('Library'), [
+                $this->forClass(SongResource::class, __('Songs')),
+                $this->forClass(SharedFileResource::class, __('Files')),
+                $this->forClass(PictureResource::class, __('Pictures')),
+                $this->forClass(SongStatistics::class, __('Song statistics')),
+            ]),
+            $this->group(__('Settings'), [
+                $this->forClass(ChurchStarter::class, __('Getting started'), Heroicon::OutlinedRocketLaunch)
+                    ->visible(fn (): bool => ChurchStarter::shouldRegisterNavigation()),
+                $this->forClass(ChurchSettings::class, __('Church')),
+                $this->forClass(ManageModules::class, __('Modules')),
+                $this->forClass(RoleResource::class, __('Roles')),
+                $this->forClass(TaskTemplateResource::class, __('Activity types')),
+                $this->forClass(MessageTemplateResource::class, __('Message templates')),
+                $this->forClass(MessagingSettings::class),
+                $this->forClass(SmsMessagingSettings::class),
+                $this->forClass(WhatsAppMessagingSettings::class),
+                $this->forClass(BibleSettings::class),
+                $this->forClass(LanguageResource::class),
+            ]),
+        ];
+
+        foreach ($groups as $group) {
+            $visible = array_values(array_filter($group->getItems(), fn (NavigationItem $item): bool => $item->isVisible()));
+
+            if (count($visible) === 1) {
+                $builder->item($visible[0]->group(null));
+
+                continue;
+            }
+
+            $builder->group($group);
+        }
+
+        return $builder;
+    }
+
+    /**
+     * @return list<NavigationItem>
+     */
+    private function primaryItems(): array
+    {
+        $tasksByEvent = NavigationItem::make(__('Tasks by event'))
+            ->icon(Heroicon::OutlinedTableCells)
+            ->url(fn (): string => EventResource::getUrl('task-spreadsheet'))
+            ->isActiveWhen(fn (): bool => original_request()->routeIs(TaskSpreadsheet::getRouteName()))
+            ->visible(fn (): bool => $this->audience->isPlanner() && TaskSpreadsheet::canAccess());
+        $services = $this->forClass(EventResource::class)
+            ->isActiveWhen(fn (): bool => original_request()->routeIs(EventResource::getRouteBaseName().'.*')
+                && ! original_request()->routeIs(TaskSpreadsheet::getRouteName()));
+        $mySchedule = $this->forClass(MyTasks::class, __('My schedule'), Heroicon::OutlinedClipboardDocumentCheck);
+        $availability = $this->forClass(MyUnavailability::class, __('Availability'), Heroicon::OutlinedCalendarDateRange);
+        $churches = $this->forClass(ChurchResource::class);
+
+        return $this->audience->isPlanner()
+            ? [$tasksByEvent, $services, $mySchedule, $availability, $churches]
+            : [$mySchedule, $availability, $services, $churches];
+    }
+
+    /**
+     * The few destinations shown in the phone tab bar: the first top-level items for this user.
+     *
+     * @return list<NavigationItem>
+     */
+    public function mobileTabs(int $limit = 3): array
+    {
+        foreach ($this->build(new NavigationBuilder)->getNavigation() as $group) {
+            if ($group->getLabel() !== null) {
+                continue;
+            }
+
+            return array_slice(
+                array_values(array_filter($group->getItems(), fn (NavigationItem $item): bool => $item->isVisible())),
+                0,
+                $limit,
+            );
+        }
+
+        return [];
+    }
+
+    /**
+     * @param  class-string  $class
+     */
+    private function forClass(string $class, ?string $label = null, mixed $icon = null): NavigationItem
+    {
+        /** @var NavigationItem $item */
+        $item = $class::getNavigationItems()[0];
+
+        $item->group(null)->sort(null)->visible(fn (): bool => $class::canAccess());
+
+        if ($label !== null) {
+            $item->label($label);
+        }
+
+        if ($icon !== null) {
+            $item->icon($icon);
+        }
+
+        return $item;
+    }
+
+    /**
+     * @param  list<NavigationItem>  $items
+     */
+    private function group(string $label, array $items): NavigationGroup
+    {
+        return NavigationGroup::make($label)->items($items);
+    }
+}

@@ -1,0 +1,200 @@
+<?php
+
+namespace App\Filament\Pages;
+
+use App\Core\Modules\ChurchModuleManager;
+use App\Core\Tenancy\CurrentChurch;
+use App\Models\User;
+use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
+use Filament\Pages\Page;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\EmbeddedSchema;
+use Filament\Schemas\Components\Form;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Illuminate\Contracts\Support\Htmlable;
+use Modules\Messaging\Support\MessagingAvailability;
+use Spatie\Permission\PermissionRegistrar;
+use UnitEnum;
+
+class MessagingSettings extends Page
+{
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
+
+    public static function getNavigationGroup(): string|UnitEnum|null
+    {
+        return __('Admin');
+    }
+
+    protected static ?int $navigationSort = 55;
+
+    public static function getNavigationLabel(): string
+    {
+        return __('Email settings');
+    }
+
+    public function getTitle(): string|Htmlable
+    {
+        return __('Email messaging settings');
+    }
+
+    protected string $view = 'filament-panels::pages.page';
+
+    /** @var array<string, mixed> */
+    public ?array $data = [];
+
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+
+        if (! $user instanceof User || $user->church_id === null || $user->church === null) {
+            return false;
+        }
+
+        if (! app(ChurchModuleManager::class)->isEnabled($user->church, MessagingAvailability::MODULE_EMAIL)) {
+            return false;
+        }
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId($user->church_id);
+
+        return $user->can('messaging.settings.manage');
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
+    public function mount(): void
+    {
+        $church = app(CurrentChurch::class)->get() ?? auth()->user()?->church;
+        abort_unless($church, 403);
+
+        $settings = app(ChurchModuleManager::class)->settings($church, MessagingAvailability::MODULE_EMAIL);
+        $email = $settings['email'] ?? [];
+        $reminders = $settings['reminders'] ?? [];
+
+        $this->form->fill([
+            'host' => $email['host'] ?? '',
+            'port' => $email['port'] ?? 587,
+            'username' => $email['username'] ?? '',
+            'password' => '',
+            'encryption' => $email['encryption'] ?? 'tls',
+            'from_address' => $email['from_address'] ?? '',
+            'from_name' => $email['from_name'] ?? '',
+            'reminders_enabled' => (bool) ($reminders['enabled'] ?? false),
+            'reminders_days_before' => (int) ($reminders['days_before'] ?? 3),
+        ]);
+    }
+
+    public function form(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Section::make(__('Email (SMTP)'))
+                    ->description(__('How WorshipPlanner sends invitation and reminder emails for this church.'))
+                    ->schema([
+                        TextInput::make('host')->label(__('SMTP host'))->required(),
+                        TextInput::make('port')->numeric()->default(587)->required(),
+                        Select::make('encryption')
+                            ->options([
+                                'tls' => 'TLS',
+                                'ssl' => 'SSL',
+                                '' => 'None',
+                            ])
+                            ->native(false),
+                        TextInput::make('username'),
+                        TextInput::make('password')
+                            ->password()
+                            ->revealable()
+                            ->helperText(__('Leave blank to keep the current password.')),
+                        TextInput::make('from_address')->email()->required()->label(__('From address')),
+                        TextInput::make('from_name')->label(__('From name')),
+                    ])
+                    ->columns(2),
+                Section::make(__('Automatic reminders'))
+                    ->description(__('Email people who are invited or confirmed, on the church’s local calendar day before the service.'))
+                    ->schema([
+                        Toggle::make('reminders_enabled')
+                            ->label(__('Send automatic reminders'))
+                            ->helperText(__('Uses each person’s preferred messaging channel when available.')),
+                        TextInput::make('reminders_days_before')
+                            ->label(__('Days before the service'))
+                            ->numeric()
+                            ->minValue(0)
+                            ->maxValue(30)
+                            ->default(3)
+                            ->required()
+                            ->helperText(__('0 = the morning of the service (church local time).')),
+                    ])
+                    ->columns(2),
+            ])
+            ->statePath('data');
+    }
+
+    public function content(Schema $schema): Schema
+    {
+        return $schema
+            ->components([
+                Form::make([EmbeddedSchema::make('form')])
+                    ->id('form')
+                    ->livewireSubmitHandler('save')
+                    ->footer([
+                        Actions::make([
+                            Action::make('save')
+                                ->label(__('Save settings'))
+                                ->submit('save'),
+                        ]),
+                    ]),
+            ]);
+    }
+
+    public function save(): void
+    {
+        $church = app(CurrentChurch::class)->get() ?? auth()->user()?->church;
+        abort_unless($church, 403);
+
+        $manager = app(ChurchModuleManager::class);
+        $data = $this->form->getState();
+        $existing = $manager->settings($church, MessagingAvailability::MODULE_EMAIL);
+        $existingPassword = $existing['email']['password'] ?? '';
+
+        $password = filled($data['password'] ?? null)
+            ? $manager->encryptSecret($data['password'])
+            : $existingPassword;
+
+        $manager->updateSettings($church, MessagingAvailability::MODULE_EMAIL, [
+            'email' => [
+                'host' => $data['host'] ?? '',
+                'port' => (int) ($data['port'] ?? 587),
+                'username' => $data['username'] ?? '',
+                'password' => $password,
+                'encryption' => $data['encryption'] ?? 'tls',
+                'from_address' => $data['from_address'] ?? '',
+                'from_name' => $data['from_name'] ?? '',
+            ],
+            'reminders' => [
+                'enabled' => (bool) ($data['reminders_enabled'] ?? false),
+                'days_before' => max(0, min(30, (int) ($data['reminders_days_before'] ?? 3))),
+            ],
+        ]);
+
+        $manager->enable($church, MessagingAvailability::MODULE_EMAIL);
+
+        Notification::make()
+            ->title(__('Messaging settings saved'))
+            ->success()
+            ->send();
+
+        $this->form->fill([
+            ...$data,
+            'password' => '',
+        ]);
+    }
+}

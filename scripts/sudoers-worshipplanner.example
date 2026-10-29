@@ -1,0 +1,15 @@
+# Install on the server (as root), then adjust User_Alias if deploy SSH user differs:
+#
+#   sudo install -m 440 scripts/sudoers-worshipplanner.example /etc/sudoers.d/worshipplanner-deploy
+#   sudo visudo -cf /etc/sudoers.d/worshipplanner-deploy
+#
+# Do NOT put a sudo password in GitHub Actions secrets. This file grants
+# passwordless chown of storage + bootstrap/cache only.
+
+Defaults:pingst !requiretty
+
+Cmnd_Alias WP_STORAGE_CHOWN = \
+    /usr/bin/chown -R apache\:apache /var/www/WorshipPlanner/storage, \
+    /usr/bin/chown -R apache\:apache /var/www/WorshipPlanner/bootstrap/cache
+
+pingst ALL=(root) NOPASSWD: WP_STORAGE_CHOWN

@@ -1,0 +1,180 @@
+<?php
+
+namespace App\Models;
+
+use App\Core\Tenancy\BelongsToChurch;
+use Database\Factories\EventFactory;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
+
+class Event extends Model
+{
+    /** @use HasFactory<EventFactory> */
+    use BelongsToChurch, HasFactory;
+
+    protected $fillable = [
+        'church_id',
+        'name',
+        'description',
+        'starts_at',
+        'ends_at',
+        'shared_at',
+        'plan_changed_at',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'starts_at' => 'datetime',
+            'ends_at' => 'datetime',
+            'shared_at' => 'datetime',
+            'plan_changed_at' => 'datetime',
+        ];
+    }
+
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(EventTask::class)
+            ->orderByRaw('(SELECT COALESCE(use_globally, 0) FROM task_templates WHERE task_templates.id = event_tasks.task_template_id) DESC')
+            ->orderByRaw('CASE WHEN (SELECT COALESCE(use_globally, 0) FROM task_templates WHERE task_templates.id = event_tasks.task_template_id) = 1 THEN (SELECT default_global_order FROM task_templates WHERE task_templates.id = event_tasks.task_template_id) ELSE event_tasks.sort_order END')
+            ->orderBy('event_tasks.id');
+    }
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(EventMessage::class)->latest();
+    }
+
+    /**
+     * Users assigned to at least one task on this event.
+     *
+     * @return EloquentCollection<int, User>
+     */
+    public function participantUsers(): EloquentCollection
+    {
+        $ids = $this->tasks()
+            ->whereNotNull('assigned_user_id')
+            ->pluck('assigned_user_id')
+            ->unique()
+            ->filter()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return new EloquentCollection;
+        }
+
+        return User::query()
+            ->whereIn('id', $ids)
+            ->orderBy('display_name')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * Teams assigned to at least one task on this event.
+     *
+     * @return EloquentCollection<int, Team>
+     */
+    public function participantTeams(): EloquentCollection
+    {
+        $ids = $this->tasks()
+            ->whereNotNull('assigned_team_id')
+            ->pluck('assigned_team_id')
+            ->unique()
+            ->filter()
+            ->values();
+
+        if ($ids->isEmpty()) {
+            return new EloquentCollection;
+        }
+
+        return Team::query()
+            ->whereIn('id', $ids)
+            ->with('leaders')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * @return Collection<int|string, string>
+     */
+    public function participantOptions(): Collection
+    {
+        return $this->participantUsers()
+            ->mapWithKeys(fn (User $user) => [
+                $user->id => $user->display_name ?: $user->name,
+            ]);
+    }
+
+    /**
+     * @return Collection<int|string, string>
+     */
+    public function participantTeamOptions(): Collection
+    {
+        return $this->participantTeams()
+            ->mapWithKeys(fn (Team $team) => [
+                $team->id => $team->name.' (to leaders)',
+            ]);
+    }
+
+    /**
+     * One option per task that has a person: "Anna — Preacher". Keys are task ids.
+     *
+     * @return Collection<int, string>
+     */
+    public function personTaskOptions(): Collection
+    {
+        return $this->tasks()
+            ->whereNotNull('assigned_user_id')
+            ->with(['assignedUser', 'template'])
+            ->get()
+            ->sortBy(fn (EventTask $task): string => mb_strtolower($task->assignedUser?->displayName().' '.$task->displayName()))
+            ->mapWithKeys(fn (EventTask $task): array => [
+                $task->id => $task->assignedUser?->displayName().' — '.$task->displayName(),
+            ]);
+    }
+
+    /**
+     * One option per task that only has a team: "Music team — Worship (to leaders)". Keys are task ids.
+     *
+     * @return Collection<int, string>
+     */
+    public function teamTaskOptions(): Collection
+    {
+        return $this->tasks()
+            ->whereNull('assigned_user_id')
+            ->whereNotNull('assigned_team_id')
+            ->with(['assignedTeam', 'template'])
+            ->get()
+            ->sortBy(fn (EventTask $task): string => mb_strtolower($task->assignedTeam?->name.' '.$task->displayName()))
+            ->mapWithKeys(fn (EventTask $task): array => [
+                $task->id => __(':team — :task (to leaders)', [
+                    'team' => $task->assignedTeam?->name,
+                    'task' => $task->displayName(),
+                ]),
+            ]);
+    }
+
+    /**
+     * Tasks the user is assigned to personally first, then tasks for teams they lead.
+     *
+     * @return Collection<int, EventTask>
+     */
+    public function tasksFor(User $user): Collection
+    {
+        $this->loadMissing(['tasks.assignedTeam', 'tasks.responses', 'tasks.template']);
+
+        $personal = $this->tasks->filter(
+            fn (EventTask $task): bool => (int) $task->assigned_user_id === (int) $user->id
+        );
+
+        $ledTeams = $this->tasks->filter(fn (EventTask $task): bool => blank($task->assigned_user_id)
+            && filled($task->assigned_team_id)
+            && ($task->assignedTeam?->isLeader($user) ?? false));
+
+        return $personal->concat($ledTeams)->values();
+    }
+}
