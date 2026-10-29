@@ -106,8 +106,8 @@ fix_web_ownership() {
     return 1
 }
 
-fix_web_ownership storage || true
-fix_web_ownership bootstrap/cache || true
+fix_web_ownership "$DEPLOY_PATH/storage" || true
+fix_web_ownership "$DEPLOY_PATH/bootstrap/cache" || true
 chmod -R ug+rwX storage bootstrap/cache 2>/dev/null || true
 
 trap - EXIT
