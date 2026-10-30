@@ -53,7 +53,7 @@ class AssignedTasksRelationManager extends RelationManager
     {
         return AssignedTasksTable::configure(
             $table
-                ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['event', 'template', 'assignedUser']))
+                ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['event', 'template', 'assignedUser', 'responses']))
                 ->emptyStateHeading(__('No tasks for this team'))
                 ->emptyStateDescription(__('When this team is assigned on an event, those tasks appear here.')),
             options: ['show_assignee' => false],

@@ -24,6 +24,8 @@ use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 
 class AssignedTasksTable
@@ -69,6 +71,13 @@ class AssignedTasksTable
                                 ->orWhereHas('template', fn (Builder $q) => $q->where('name', 'like', "%{$search}%"));
                         });
                     }),
+                TextColumn::make('assignment_state')
+                    ->label(__('Status'))
+                    ->state(fn (EventTask $record): AssignmentState => app(AssignmentStateResolver::class)->for($record))
+                    ->formatStateUsing(fn (AssignmentState $state): HtmlString => new HtmlString(Blade::render(
+                        '<x-assignment-status :state="$state" />',
+                        ['state' => $state],
+                    ))),
                 TextColumn::make('assignedUser.display_name')
                     ->disabledClick()
                     ->label(__('Person'))
@@ -189,8 +198,7 @@ class AssignedTasksTable
                             'record' => $record->event_id,
                         ]);
                     })
-                    ->visible(fn (EventTask $record): bool => ! $asSchedule
-                        && $record->event !== null
+                    ->visible(fn (EventTask $record): bool => $record->event !== null
                         && (auth()->user()?->can('view', $record->event) ?? false)),
             ])
             ->emptyStateHeading(__('No assigned tasks'))

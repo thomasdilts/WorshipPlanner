@@ -4,7 +4,9 @@ namespace Tests\Feature\AssignedTasks;
 
 use App\Core\Modules\ChurchModuleManager;
 use App\Core\Tenancy\CurrentChurch;
+use App\Enums\AssignmentState;
 use App\Filament\Pages\MyTasks;
+use App\Filament\Resources\Events\EventResource;
 use App\Filament\Resources\Teams\Pages\ViewTeam;
 use App\Filament\Resources\Teams\RelationManagers\AssignedTasksRelationManager;
 use App\Models\Church;
@@ -186,6 +188,61 @@ class AssignedTasksListTest extends TestCase
             ->assertCanNotSeeTableRecords([$pastTask])
             ->set('tableFilters.from_date.date', null)
             ->assertCanSeeTableRecords([$pastTask]);
+    }
+
+    public function test_team_tasks_show_the_effective_assignment_status(): void
+    {
+        $church = Church::factory()->create();
+        $this->seed(RolesAndPermissionsSeeder::class);
+        app(ChurchModuleManager::class)->enable($church, 'teams');
+        app(CurrentChurch::class)->set($church);
+
+        $leader = User::factory()->create(['church_id' => $church->id]);
+        RolesAndPermissionsSeeder::assignDefaultRoles($leader, 'Team Leader');
+
+        $type = TeamType::factory()->create(['church_id' => $church->id]);
+        $team = Team::factory()->create([
+            'church_id' => $church->id,
+            'team_type_id' => $type->id,
+        ]);
+        $team->syncRoster([$leader->id], [$leader->id]);
+
+        $template = TaskTemplate::factory()->create([
+            'church_id' => $church->id,
+            'team_type_id' => $type->id,
+        ]);
+        $task = $this->taskForTeam($church, $team, $template, now()->addDays(2), 'Sunday choir');
+        $task->update(['accepted_verbally_at' => now()]);
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId($church->id);
+        $this->actingAs($leader);
+
+        Livewire::test(AssignedTasksRelationManager::class, [
+            'ownerRecord' => $team,
+            'pageClass' => ViewTeam::class,
+        ])
+            ->assertTableColumnStateSet('assignment_state', AssignmentState::ConfirmedVerbally, $task)
+            ->assertSee('Accepted verbally');
+    }
+
+    public function test_my_schedule_links_each_task_to_its_event(): void
+    {
+        $church = Church::factory()->create();
+        $this->seed(RolesAndPermissionsSeeder::class);
+        app(CurrentChurch::class)->set($church);
+
+        $member = User::factory()->create(['church_id' => $church->id]);
+        RolesAndPermissionsSeeder::assignDefaultRoles($member, 'Member');
+        app(PermissionRegistrar::class)->setPermissionsTeamId($church->id);
+
+        $template = TaskTemplate::factory()->create(['church_id' => $church->id]);
+        $task = $this->taskForUser($church, $member, $template, now()->addDays(3), 'Upcoming task');
+
+        $this->actingAs($member);
+
+        Livewire::test(MyTasks::class)
+            ->assertTableActionVisible('openEvent', $task)
+            ->assertTableActionHasUrl('openEvent', EventResource::getUrl('view', ['record' => $task->event_id]), $task);
     }
 
     protected function taskForUser(
