@@ -9,7 +9,6 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
@@ -78,7 +77,6 @@ class MessagingSettings extends Page
 
         $settings = app(ChurchModuleManager::class)->settings($church, MessagingAvailability::MODULE_EMAIL);
         $email = $settings['email'] ?? [];
-        $reminders = $settings['reminders'] ?? [];
 
         $this->form->fill([
             'host' => $email['host'] ?? '',
@@ -88,8 +86,6 @@ class MessagingSettings extends Page
             'encryption' => $email['encryption'] ?? 'tls',
             'from_address' => $email['from_address'] ?? '',
             'from_name' => $email['from_name'] ?? '',
-            'reminders_enabled' => (bool) ($reminders['enabled'] ?? false),
-            'reminders_days_before' => (int) ($reminders['days_before'] ?? 3),
         ]);
     }
 
@@ -98,7 +94,7 @@ class MessagingSettings extends Page
         return $schema
             ->components([
                 Section::make(__('Email (SMTP)'))
-                    ->description(__('How WorshipPlanner sends invitation and reminder emails for this church.'))
+                    ->description(__('How WorshipPlanner sends emails for this church.'))
                     ->schema([
                         TextInput::make('host')->label(__('SMTP host'))->required(),
                         TextInput::make('port')->numeric()->default(587)->required(),
@@ -116,22 +112,6 @@ class MessagingSettings extends Page
                             ->helperText(__('Leave blank to keep the current password.')),
                         TextInput::make('from_address')->email()->required()->label(__('From address')),
                         TextInput::make('from_name')->label(__('From name')),
-                    ])
-                    ->columns(2),
-                Section::make(__('Automatic reminders'))
-                    ->description(__('Email people who are invited or confirmed, on the church’s local calendar day before the service.'))
-                    ->schema([
-                        Toggle::make('reminders_enabled')
-                            ->label(__('Send automatic reminders'))
-                            ->helperText(__('Uses each person’s preferred messaging channel when available.')),
-                        TextInput::make('reminders_days_before')
-                            ->label(__('Days before the service'))
-                            ->numeric()
-                            ->minValue(0)
-                            ->maxValue(30)
-                            ->default(3)
-                            ->required()
-                            ->helperText(__('0 = the morning of the service (church local time).')),
                     ])
                     ->columns(2),
             ])
@@ -178,10 +158,6 @@ class MessagingSettings extends Page
                 'encryption' => $data['encryption'] ?? 'tls',
                 'from_address' => $data['from_address'] ?? '',
                 'from_name' => $data['from_name'] ?? '',
-            ],
-            'reminders' => [
-                'enabled' => (bool) ($data['reminders_enabled'] ?? false),
-                'days_before' => max(0, min(30, (int) ($data['reminders_days_before'] ?? 3))),
             ],
         ]);
 

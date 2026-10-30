@@ -111,10 +111,6 @@ class ChurchModuleManager
                     'from_address' => '',
                     'from_name' => '',
                 ],
-                'reminders' => [
-                    'enabled' => false,
-                    'days_before' => 3,
-                ],
             ],
             'messaging_sms' => [
                 'api_base' => 'https://api.ip1sms.com/v2',

@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Middleware\SetUserLocale;
-use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,11 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetUserLocale::class,
         ]);
-    })
-    ->withSchedule(function (Schedule $schedule): void {
-        $schedule->command('assignments:send-reminders')
-            ->hourly()
-            ->withoutOverlapping(55);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
