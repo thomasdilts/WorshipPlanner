@@ -18,6 +18,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
+use Modules\Messaging\Services\TemplateMessages;
 use Modules\Messaging\Support\MessagingAvailability;
 use Spatie\Permission\PermissionRegistrar;
 use UnitEnum;
@@ -86,6 +87,7 @@ class MessagingSettings extends Page
             'encryption' => $email['encryption'] ?? 'tls',
             'from_address' => $email['from_address'] ?? '',
             'from_name' => $email['from_name'] ?? '',
+            'confirmation_template_id' => $settings['confirmation_template_id'] ?? null,
         ]);
     }
 
@@ -114,6 +116,16 @@ class MessagingSettings extends Page
                         TextInput::make('from_name')->label(__('From name')),
                     ])
                     ->columns(2),
+                Section::make(__('Preferred messaging confirmation'))
+                    ->description(__('Sent by email when someone chooses email as their preferred messaging.'))
+                    ->schema([
+                        Select::make('confirmation_template_id')
+                            ->label(__('Message template'))
+                            ->options(fn (?string $state): array => app(TemplateMessages::class)->confirmationOptions($state))
+                            ->helperText(__('Templates marked “Other” are listed here.'))
+                            ->searchable()
+                            ->required(),
+                    ]),
             ])
             ->statePath('data');
     }
@@ -159,6 +171,7 @@ class MessagingSettings extends Page
                 'from_address' => $data['from_address'] ?? '',
                 'from_name' => $data['from_name'] ?? '',
             ],
+            'confirmation_template_id' => (int) $data['confirmation_template_id'],
         ]);
 
         $manager->enable($church, MessagingAvailability::MODULE_EMAIL);

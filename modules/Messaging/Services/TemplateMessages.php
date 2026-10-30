@@ -36,6 +36,27 @@ class TemplateMessages
     }
 
     /**
+     * Templates for the preferred-messaging confirmation select: those marked "Other", plus the
+     * saved choice so it stays selectable after its purpose changes.
+     *
+     * @return array<int, string>
+     */
+    public function confirmationOptions(int|string|null $current): array
+    {
+        $options = $this->options(MessageTemplatePurpose::Other);
+
+        if (filled($current) && ! array_key_exists((int) $current, $options)) {
+            $saved = MessageTemplate::query()->find($current);
+
+            if ($saved !== null) {
+                $options[$saved->id] = $saved->name;
+            }
+        }
+
+        return $options;
+    }
+
+    /**
      * Whether the template, or its WhatsApp template, contains {{custom_mess}}.
      */
     public function usesCustomMessage(?MessageTemplate $template): bool

@@ -894,5 +894,7 @@
     "Never offered when sending messages, e.g. the preferred messaging confirmation.": "Visas aldrig när man skickar meddelanden, t.ex. bekräftelsen av föredragen meddelandetyp.",
     "Used for": "Används till",
     "Only templates made for :purpose are listed.": "Bara mallar för :purpose visas.",
-    "Templates marked “Other” are listed here.": "Här visas mallar som är markerade ”Övrigt”."
+    "Templates marked “Other” are listed here.": "Här visas mallar som är markerade ”Övrigt”.",
+    "Sent by email when someone chooses email as their preferred messaging.": "Skickas via e-post när någon väljer e-post som föredragen meddelandetyp.",
+    "No confirmation template is chosen in the email settings.": "Ingen bekräftelsemall är vald i e-postinställningarna."
 }

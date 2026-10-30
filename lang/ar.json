@@ -894,5 +894,7 @@
     "Never offered when sending messages, e.g. the preferred messaging confirmation.": "لا يُعرض أبدًا عند إرسال الرسائل، مثل تأكيد طريقة المراسلة المفضلة.",
     "Used for": "يُستخدم لـ",
     "Only templates made for :purpose are listed.": "تُعرض فقط القوالب المخصصة لـ :purpose.",
-    "Templates marked “Other” are listed here.": "تُعرض هنا القوالب المصنفة «أخرى»."
+    "Templates marked “Other” are listed here.": "تُعرض هنا القوالب المصنفة «أخرى».",
+    "Sent by email when someone chooses email as their preferred messaging.": "تُرسل عبر البريد الإلكتروني عندما يختار شخص ما البريد الإلكتروني كطريقة المراسلة المفضلة.",
+    "No confirmation template is chosen in the email settings.": "لم يتم اختيار قالب تأكيد في إعدادات البريد الإلكتروني."
 }

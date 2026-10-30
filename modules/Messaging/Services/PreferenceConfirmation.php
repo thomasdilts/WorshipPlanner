@@ -14,8 +14,8 @@ use Modules\Messaging\Support\MessagePlaceholders;
 use Modules\Messaging\Support\MessagingAvailability;
 
 /**
- * Confirms a newly chosen messaging type through that channel: SMS sends the message template chosen
- * in the SMS settings, WhatsApp the Meta template chosen in the WhatsApp settings, email a built-in text.
+ * Confirms a newly chosen messaging type through that channel: email and SMS send the message template
+ * chosen in their settings, WhatsApp the Meta template chosen in the WhatsApp settings.
  */
 class PreferenceConfirmation
 {
@@ -38,9 +38,19 @@ class PreferenceConfirmation
         }
 
         $message = $this->withLocale($locale, fn (): OutboundMessageData|SendResult => match ($preference) {
-            MessagePreference::Sms => $this->smsMessage($recipient),
+            MessagePreference::Email => $this->templateMessage(
+                $recipient,
+                $preference,
+                MessagingAvailability::MODULE_EMAIL,
+                __('No confirmation template is chosen in the email settings.'),
+            ),
+            MessagePreference::Sms => $this->templateMessage(
+                $recipient,
+                $preference,
+                MessagingAvailability::MODULE_SMS,
+                __('No confirmation template is chosen in the SMS settings.'),
+            ),
             MessagePreference::WhatsApp => $this->whatsAppMessage($recipient),
-            default => $this->builtInMessage($preference),
         });
 
         if ($message instanceof SendResult) {
@@ -50,11 +60,14 @@ class PreferenceConfirmation
         return $this->sender->sendVia($recipient, $preference, $message);
     }
 
-    protected function smsMessage(User $recipient): OutboundMessageData|SendResult
+    /**
+     * The message template chosen in the channel's settings.
+     */
+    protected function templateMessage(User $recipient, MessagePreference $preference, string $moduleKey, string $missing): OutboundMessageData|SendResult
     {
         $settings = $recipient->church === null
             ? []
-            : $this->modules->settings($recipient->church, MessagingAvailability::MODULE_SMS);
+            : $this->modules->settings($recipient->church, $moduleKey);
         $template = filled($settings['confirmation_template_id'] ?? null)
             ? MessageTemplate::query()->withoutGlobalScope('church')
                 ->where('church_id', $recipient->church_id)
@@ -62,7 +75,7 @@ class PreferenceConfirmation
             : null;
 
         if ($template === null) {
-            return SendResult::fail(MessagePreference::Sms->value, __('No confirmation template is chosen in the SMS settings.'));
+            return SendResult::fail($preference->value, $missing);
         }
 
         return $this->templates->compose(

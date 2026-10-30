@@ -3,7 +3,9 @@
 namespace Tests\Feature\Messaging;
 
 use App\Core\Modules\ChurchModuleManager;
+use App\Core\Tenancy\CurrentChurch;
 use App\Enums\MessagePreference;
+use App\Enums\MessageTemplatePurpose;
 use App\Filament\Pages\EditProfile;
 use App\Filament\Pages\MessagingSettings;
 use App\Models\Church;
@@ -46,6 +48,13 @@ class MessagingModuleTest extends TestCase
 
         $admin = User::factory()->create(['church_id' => $church->id]);
         RolesAndPermissionsSeeder::assignDefaultRoles($admin, 'Church Admin');
+        app(CurrentChurch::class)->set($church);
+        $confirmation = MessageTemplate::query()->create([
+            'church_id' => $church->id,
+            'name' => 'Confirmation',
+            'purpose' => MessageTemplatePurpose::Other,
+            'body' => '<p>Email works</p>',
+        ]);
 
         $this->actingAs($admin);
 
@@ -58,12 +67,14 @@ class MessagingModuleTest extends TestCase
                 'password' => 'secret',
                 'from_address' => 'worship@example.test',
                 'from_name' => 'Example Church',
+                'confirmation_template_id' => $confirmation->id,
             ])
             ->call('save')
             ->assertHasNoFormErrors();
 
         $settings = app(ChurchModuleManager::class)->settings($church->fresh(), 'messaging');
 
+        $this->assertSame($confirmation->id, $settings['confirmation_template_id']);
         $this->assertSame('smtp.example.test', $settings['email']['host']);
         $this->assertSame('worship@example.test', $settings['email']['from_address']);
         $this->assertNotSame('secret', $settings['email']['password']);

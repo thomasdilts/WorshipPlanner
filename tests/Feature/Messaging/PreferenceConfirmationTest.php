@@ -19,6 +19,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
+use Modules\Messaging\Mail\GenericMessageMail;
 use Modules\Messaging\Support\MessagingAvailability;
 use Tests\TestCase;
 
@@ -175,7 +176,30 @@ class PreferenceConfirmationTest extends TestCase
         $this->assertSame(MessagePreference::Email, $this->user->fresh()->message_preference);
     }
 
-    public function test_email_choice_sends_a_test_email_when_email_is_set_up(): void
+    public function test_email_choice_sends_the_confirmation_template_chosen_in_the_email_settings(): void
+    {
+        Mail::fake();
+        $template = MessageTemplate::query()->create([
+            'church_id' => $this->church->id,
+            'name' => 'Email confirmation',
+            'purpose' => MessageTemplatePurpose::Other,
+            'subject' => 'Changed by {{message_sender}}',
+            'body' => '<p>Hej {{first_name}}, e-post fungerar!</p>',
+        ]);
+        app(ChurchModuleManager::class)->updateSettings($this->church, MessagingAvailability::MODULE_EMAIL, [
+            'email' => ['host' => 'smtp.test', 'from_address' => 'church@test'],
+            'confirmation_template_id' => $template->id,
+        ]);
+        $this->user->update(['message_preference' => MessagePreference::Sms]);
+
+        $this->saveProfile(['message_preference' => MessagePreference::Email->value])
+            ->assertHasNoFormErrors();
+
+        Mail::assertSent(GenericMessageMail::class, fn (GenericMessageMail $mail): bool => $mail->messageSubject === 'Changed by Anna Svensson'
+            && str_contains($mail->messageBody, 'Hej Anna, e-post fungerar!'));
+    }
+
+    public function test_email_choice_is_saved_but_the_editor_is_warned_when_no_confirmation_template_is_chosen(): void
     {
         Mail::fake();
         app(ChurchModuleManager::class)->updateSettings($this->church, MessagingAvailability::MODULE_EMAIL, [
@@ -184,9 +208,11 @@ class PreferenceConfirmationTest extends TestCase
         $this->user->update(['message_preference' => MessagePreference::Sms]);
 
         $this->saveProfile(['message_preference' => MessagePreference::Email->value])
-            ->assertHasNoFormErrors();
+            ->assertHasNoFormErrors()
+            ->assertNotified(__('The test email could not be sent'));
 
-        Mail::assertSentCount(1);
+        $this->assertSame(MessagePreference::Email, $this->user->fresh()->message_preference);
+        Mail::assertNothingSent();
     }
 
     public function test_saving_without_changing_the_preference_sends_nothing(): void

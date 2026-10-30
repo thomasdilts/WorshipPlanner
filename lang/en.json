@@ -894,5 +894,7 @@
     "Never offered when sending messages, e.g. the preferred messaging confirmation.": "Never offered when sending messages, e.g. the preferred messaging confirmation.",
     "Used for": "Used for",
     "Only templates made for :purpose are listed.": "Only templates made for :purpose are listed.",
-    "Templates marked “Other” are listed here.": "Templates marked “Other” are listed here."
+    "Templates marked “Other” are listed here.": "Templates marked “Other” are listed here.",
+    "Sent by email when someone chooses email as their preferred messaging.": "Sent by email when someone chooses email as their preferred messaging.",
+    "No confirmation template is chosen in the email settings.": "No confirmation template is chosen in the email settings."
 }
