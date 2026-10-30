@@ -20,7 +20,7 @@ class MessageTemplatesSeederTest extends TestCase
 
         foreach ($churches as $church) {
             $this->assertEqualsCanonicalizing(
-                ['krava-svar', 'paminnelse-endast'],
+                ['krava-svar', 'paminnelse-endast', 'custom_service_mess', 'team_custom_message', 'preferred_messageing'],
                 MessageTemplate::query()->withoutGlobalScope('church')->where('church_id', $church->id)->pluck('key')->all(),
             );
         }
@@ -42,7 +42,7 @@ class MessageTemplatesSeederTest extends TestCase
         MessageTemplatesSeeder::seedForChurch($church);
 
         $templates = MessageTemplate::query()->withoutGlobalScope('church')->where('church_id', $church->id)->get();
-        $this->assertCount(2, $templates);
+        $this->assertCount(5, $templates);
         $this->assertSame('Edited', $templates->firstWhere('key', 'krava-svar')->text_body);
     }
 }

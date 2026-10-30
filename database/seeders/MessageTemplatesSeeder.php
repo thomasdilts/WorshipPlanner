@@ -91,6 +91,57 @@ class MessageTemplatesSeeder extends Seeder
                     TEXT,
                 'whatsapp_template' => 'paminnelse',
             ],
+            [
+                'name' => 'Gudstjänst anpassat meddelande',
+                'key' => 'custom_service_mess',
+                'subject' => '{{church}}, {{task}}, {{event}}, {{date}}, uppdatering',
+                'body' => <<<'HTML'
+                    <p>Detta är ett anpassat meddelande ifrån {{message_sender}} angående {{task}} på {{event}} {{date}}:</p>
+                    <p>{{custom_mess}}</p>
+                    <p>Tack och Gud Välsigna Dig!</p>
+                    HTML,
+                'text_body' => <<<'TEXT'
+                    Detta är ett anpassat meddelande ifrån {{message_sender}} angående {{task}} på {{event}} {{date}}:
+
+                    {{custom_mess}}
+
+                    Tack och Gud Välsigna Dig!
+                    TEXT,
+                'whatsapp_template' => 'gudstjanst_anpassat_meddelande',
+            ],
+            [
+                'name' => 'Team anpassat meddelande',
+                'key' => 'team_custom_message',
+                'subject' => '{{team}} meddelande',
+                'body' => <<<'HTML'
+                    <p>Detta är ett anpassat meddelande ifrån {{message_sender}} till teamet {{team}}:</p>
+                    <p>{{custom_mess}}</p>
+                    <p>Tack och Gud Välsigna Dig!</p>
+                    HTML,
+                'text_body' => <<<'TEXT'
+                    Detta är ett anpassat meddelande ifrån {{message_sender}} till teamet {{team}}:
+
+                    {{custom_mess}}
+
+                    Tack och Gud Välsigna Dig!
+                    TEXT,
+                'whatsapp_template' => 'team_anpassat_meddelande',
+            ],
+            [
+                'name' => 'Föredragen meddelandekanal',
+                'key' => 'preferred_messageing',
+                'subject' => "{{message_sender}} har ändrat din 'Föredragen meddelandekanal'",
+                'body' => <<<'HTML'
+                    <p>Hej {{first_name}}! {{message_sender}} har ändrat din föredragna meddelandekanal.</p>
+                    <p>Du kommer att fortsätta att få meddelanden ifrån gudstjänstplaneringssystemet för {{church}} på detta sätt.</p>
+                    HTML,
+                'text_body' => <<<'TEXT'
+                    Hej {{first_name}}! {{message_sender}} har ändrat din föredragna meddelandekanal.
+
+                    Du kommer att fortsätta att få meddelanden ifrån gudstjänstplaneringssystemet för {{church}} på detta sätt.
+                    TEXT,
+                'whatsapp_template' => 'foredragen_meddelandekanal',
+            ],
         ];
     }
 }
