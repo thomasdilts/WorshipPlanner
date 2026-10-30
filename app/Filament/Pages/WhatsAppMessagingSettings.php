@@ -7,6 +7,7 @@ use App\Core\Tenancy\CurrentChurch;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -17,6 +18,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
+use Modules\Messaging\Services\WhatsAppTemplates;
 use Modules\Messaging\Support\MessagingAvailability;
 use Spatie\Permission\PermissionRegistrar;
 use UnitEnum;
@@ -83,6 +85,7 @@ class WhatsAppMessagingSettings extends Page
             'access_token' => '',
             'phone_number_id' => $settings['phone_number_id'] ?? '',
             'business_account_id' => $settings['business_account_id'] ?? '',
+            'confirmation_whatsapp_template' => $settings['confirmation_whatsapp_template'] ?? null,
         ]);
     }
 
@@ -109,6 +112,15 @@ class WhatsAppMessagingSettings extends Page
                             ->label(__('WhatsApp Business Account ID'))
                             ->helperText(__('Needed to send approved message templates. Found in WhatsApp Manager; not the Business portfolio ID.')),
                     ]),
+                Section::make(__('Preferred messaging confirmation'))
+                    ->description(__('Sent by WhatsApp when someone chooses WhatsApp as their preferred messaging. The choice is refused if it cannot be sent.'))
+                    ->schema([
+                        Select::make('confirmation_whatsapp_template')
+                            ->label(__('Meta template'))
+                            ->options(fn (?string $state): array => $this->whatsAppTemplateOptions($state))
+                            ->searchable()
+                            ->helperText(fn (): string => trim(($this->whatsAppTemplateError() ?? '').' '.__('Until one is chosen, nobody can switch to WhatsApp. The templates load once the access token and account ID are saved.'))),
+                    ]),
             ])
             ->statePath('data');
     }
@@ -130,6 +142,37 @@ class WhatsAppMessagingSettings extends Page
             ]);
     }
 
+    /**
+     * @return array<string, string>
+     */
+    protected function whatsAppTemplateOptions(?string $current): array
+    {
+        $church = app(CurrentChurch::class)->get() ?? auth()->user()?->church;
+        $options = $church === null ? [] : app(WhatsAppTemplates::class)->options($church);
+
+        // Keep the saved choice selectable when Meta cannot be reached.
+        if (filled($current) && ! array_key_exists($current, $options)) {
+            $options[$current] = $current;
+        }
+
+        return $options;
+    }
+
+    protected function whatsAppTemplateError(): ?string
+    {
+        $church = app(CurrentChurch::class)->get() ?? auth()->user()?->church;
+
+        if ($church === null) {
+            return null;
+        }
+
+        $templates = app(WhatsAppTemplates::class);
+        $templates->all($church);
+        $error = $templates->fetchError($church);
+
+        return $error === null ? null : __('WhatsApp templates could not be loaded: :error', ['error' => $error]);
+    }
+
     public function save(): void
     {
         $church = app(CurrentChurch::class)->get() ?? auth()->user()?->church;
@@ -148,6 +191,7 @@ class WhatsAppMessagingSettings extends Page
             'access_token' => $token,
             'phone_number_id' => $data['phone_number_id'] ?? '',
             'business_account_id' => $data['business_account_id'] ?? '',
+            'confirmation_whatsapp_template' => $data['confirmation_whatsapp_template'] ?? '',
         ]);
 
         $manager->enable($church, MessagingAvailability::MODULE_WHATSAPP);

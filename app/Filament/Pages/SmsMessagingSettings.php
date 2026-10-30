@@ -7,6 +7,7 @@ use App\Core\Tenancy\CurrentChurch;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -17,6 +18,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
+use Modules\Messaging\Services\TemplateMessages;
 use Modules\Messaging\Support\MessagingAvailability;
 use Spatie\Permission\PermissionRegistrar;
 use UnitEnum;
@@ -82,6 +84,7 @@ class SmsMessagingSettings extends Page
             'api_base' => $settings['api_base'] ?? 'https://api.ip1sms.com/v2',
             'api_token' => '',
             'sender' => $settings['sender'] ?? '',
+            'confirmation_template_id' => $settings['confirmation_template_id'] ?? null,
         ]);
     }
 
@@ -106,6 +109,15 @@ class SmsMessagingSettings extends Page
                             ->required()
                             ->maxLength(15)
                             ->helperText(__('E.164 number or alphanumeric (3–11 chars).')),
+                    ]),
+                Section::make(__('Preferred messaging confirmation'))
+                    ->description(__('Sent by SMS when someone chooses SMS as their preferred messaging. The choice is refused if it cannot be sent.'))
+                    ->schema([
+                        Select::make('confirmation_template_id')
+                            ->label(__('Message template'))
+                            ->options(fn (): array => app(TemplateMessages::class)->options())
+                            ->searchable()
+                            ->required(),
                     ]),
             ])
             ->statePath('data');
@@ -145,6 +157,7 @@ class SmsMessagingSettings extends Page
             'api_base' => rtrim((string) ($data['api_base'] ?? 'https://api.ip1sms.com/v2'), '/'),
             'api_token' => $token,
             'sender' => $data['sender'] ?? '',
+            'confirmation_template_id' => (int) $data['confirmation_template_id'],
         ]);
 
         $manager->enable($church, MessagingAvailability::MODULE_SMS);

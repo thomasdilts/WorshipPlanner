@@ -39,7 +39,7 @@ class MessageTemplateForm
                     ->schema([
                         View::make('filament.messaging.placeholder-help')
                             ->viewData([
-                                'placeholders' => MessagePlaceholders::KEYS,
+                                'placeholders' => [...MessagePlaceholders::KEYS, MessagePlaceholders::CUSTOM_MESSAGE],
                                 'linkPlaceholders' => MessagePlaceholders::LINK_KEYS,
                             ]),
                     ])
@@ -88,14 +88,14 @@ class MessageTemplateForm
                     ])
                     ->columnSpanFull(),
                 Section::make(__('WhatsApp template'))
-                    ->description(__('WhatsApp only delivers free text to people who wrote to you in the last 24 hours. Choose a template approved by Meta to reach everyone; WhatsApp then sends the approved wording, not the text above.'))
+                    ->description(__('WhatsApp only delivers templates approved by Meta, so people who prefer WhatsApp get this approved wording instead of the text above.'))
                     ->visible(fn (): bool => self::whatsAppEnabled())
                     ->schema([
                         Select::make('whatsapp_template')
                             ->label(__('Meta template'))
                             ->options(fn (?string $state): array => self::whatsAppTemplateOptions($state))
                             ->searchable()
-                            ->placeholder(__('None — send the text message'))
+                            ->required(fn (): bool => self::whatsAppEnabled())
                             ->helperText(fn (): string => self::whatsAppTemplateHelp()),
                     ])
                     ->columnSpanFull(),

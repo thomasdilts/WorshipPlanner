@@ -27,6 +27,7 @@
         'date' => [__('Event date'), __('Sunday 7 September 2026')],
         'time' => [__('Event start time'), '10:00'],
         'church' => [__('Church name'), __('Your church')],
+        'custom_mess' => [__('The custom message typed when sending'), __('Bring your own music stand.')],
     ];
 @endphp
 

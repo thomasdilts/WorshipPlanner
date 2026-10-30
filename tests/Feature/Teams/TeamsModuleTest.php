@@ -8,6 +8,7 @@ use App\Filament\Resources\Teams\Pages\CreateTeam;
 use App\Models\Church;
 use App\Models\Event;
 use App\Models\EventTask;
+use App\Models\MessageTemplate;
 use App\Models\TaskTemplate;
 use App\Models\Team;
 use App\Models\TeamType;
@@ -175,8 +176,11 @@ class TeamsModuleTest extends TestCase
         $result = app(TeamMessageService::class)->send(
             team: $team,
             author: $member,
-            body: '<p>Hi</p>',
-            subject: 'Ping',
+            template: MessageTemplate::query()->create([
+                'church_id' => $this->church->id,
+                'name' => 'Ping',
+                'body' => '<p>Hi</p>',
+            ]),
             recipientUserIds: [$leader->id],
         );
 

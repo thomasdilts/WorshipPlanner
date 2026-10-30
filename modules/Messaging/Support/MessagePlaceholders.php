@@ -16,12 +16,15 @@ class MessagePlaceholders
 
     public const LINK_KEYS = ['accept_link', 'decline_link', 'accept_url', 'decline_url'];
 
+    /** Replaced with the text the sender types when choosing a template that contains it. */
+    public const CUSTOM_MESSAGE = 'custom_mess';
+
     /**
      * One-line hint listing every placeholder, for form helper texts.
      */
     public static function hint(): string
     {
-        $tokens = collect([...self::KEYS, ...self::LINK_KEYS])
+        $tokens = collect([...self::KEYS, self::CUSTOM_MESSAGE, ...self::LINK_KEYS])
             ->map(fn (string $key): string => '{{'.$key.'}}')
             ->implode(', ');
 
@@ -47,6 +50,20 @@ class MessagePlaceholders
             'time' => (string) $startsAt?->format('H:i'),
             'church' => (string) ($church?->name ?? ''),
         ];
+    }
+
+    /**
+     * Whether any of the texts contains {{custom_mess}}.
+     */
+    public static function usesCustomMessage(?string ...$texts): bool
+    {
+        foreach ($texts as $text) {
+            if (preg_match('/\{\{\s*'.self::CUSTOM_MESSAGE.'\s*\}\}/', (string) $text)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

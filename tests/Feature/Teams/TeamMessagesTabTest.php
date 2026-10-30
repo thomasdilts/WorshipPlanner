@@ -7,6 +7,7 @@ use App\Core\Tenancy\CurrentChurch;
 use App\Filament\Resources\Teams\Pages\EditTeam;
 use App\Filament\Resources\Teams\RelationManagers\MessagesRelationManager;
 use App\Models\Church;
+use App\Models\MessageTemplate;
 use App\Models\OutboundMessage;
 use App\Models\Team;
 use App\Models\User;
@@ -100,12 +101,20 @@ class TeamMessagesTabTest extends TestCase
             ->assertActionVisible(TestAction::make('messageTeam')->table())
             ->callAction(TestAction::make('messageTeam')->table(), data: [
                 'recipient_ids' => [$this->member->id],
-                'subject' => 'Practice',
-                'body' => 'See you at 18:00',
+                'message_template_id' => MessageTemplate::query()->create([
+                    'church_id' => $this->church->id,
+                    'name' => 'Team note',
+                    'subject' => 'Practice',
+                    'text_body' => 'Hi {{first_name}}: {{custom_mess}}',
+                ])->id,
+                'custom_message' => 'See you at 18:00',
             ])
             ->assertHasNoActionErrors();
 
         $message = OutboundMessage::query()->sole();
+
+        $this->assertSame('Practice', $message->subject);
+        $this->assertStringContainsString('See you at 18:00', $message->body);
 
         $this->assertSame($this->member->id, $message->user_id);
         $this->assertSame($this->team->id, $message->meta['team_id']);

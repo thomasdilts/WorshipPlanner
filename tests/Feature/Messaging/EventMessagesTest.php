@@ -474,6 +474,21 @@ class EventMessagesTest extends TestCase
             && str_contains($request['body'], 'Sorry, no: '.$links->declineUrl($task, $this->assignee)));
     }
 
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    protected function messageTemplate(array $attributes = []): MessageTemplate
+    {
+        return MessageTemplate::query()->create([
+            'church_id' => $this->church->id,
+            'name' => 'Note',
+            'subject' => 'Note',
+            'text_body' => 'Hello',
+            'is_active' => true,
+            ...$attributes,
+        ]);
+    }
+
     protected function configureEmail(): void
     {
         app(ChurchModuleManager::class)->updateSettings($this->church, 'messaging', [
@@ -519,7 +534,7 @@ class EventMessagesTest extends TestCase
         $this->assertSame($template->id, $message->message_template_id);
     }
 
-    public function test_own_message_is_plain_text_with_a_subject(): void
+    public function test_a_message_template_must_be_chosen(): void
     {
         $this->actingAs($this->admin);
 
@@ -529,30 +544,54 @@ class EventMessagesTest extends TestCase
             ->callTableAction('create', data: [
                 'subject' => 'Rehearsal moved',
                 'text_body' => 'Rehearsal starts at 18:00.',
-                'body' => '<p>ignored</p>',
                 'recipient_task_ids' => [$this->event->tasks()->first()->id],
             ])
-            ->assertHasNoTableActionErrors();
+            ->assertHasTableActionErrors(['message_template_id' => 'required']);
 
-        $message = EventMessage::query()->where('event_id', $this->event->id)->sole();
-
-        $this->assertSame('Rehearsal moved', $message->subject);
-        $this->assertSame('Rehearsal starts at 18:00.', $message->text_body);
-        $this->assertNull($message->body);
+        $this->assertSame(0, EventMessage::query()->count());
     }
 
-    public function test_own_message_needs_text(): void
+    public function test_custom_message_replaces_the_custom_mess_placeholder(): void
     {
+        $template = $this->messageTemplate([
+            'body' => '<p>Hi {{first_name}}</p><p>{{custom_mess}}</p>',
+            'text_body' => 'Hi {{first_name}}. {{custom_mess}}',
+        ]);
+
         $this->actingAs($this->admin);
 
         Livewire::test(ManageEventMessages::class, [
             'record' => $this->event->getRouteKey(),
         ])
             ->callTableAction('create', data: [
-                'subject' => 'Empty',
+                'message_template_id' => $template->id,
+                'custom_message' => "Rehearsal starts at 18:00.\nBring <music>.",
                 'recipient_task_ids' => [$this->event->tasks()->first()->id],
             ])
-            ->assertHasTableActionErrors(['text_body' => 'required']);
+            ->assertHasNoTableActionErrors();
+
+        $message = EventMessage::query()->where('event_id', $this->event->id)->sole();
+        $composed = app(EventMessageService::class)->compose($message, $this->assignee, $this->event->tasks()->first());
+
+        $this->assertSame("Rehearsal starts at 18:00.\nBring <music>.", $message->custom_message);
+        $this->assertStringContainsString('<p>Rehearsal starts at 18:00.<br>Bring &lt;music&gt;.</p>', $composed->body);
+        $this->assertStringContainsString("Hi Assignee. Rehearsal starts at 18:00.\nBring <music>.", $composed->plainText());
+    }
+
+    public function test_custom_message_is_required_when_the_template_has_the_placeholder(): void
+    {
+        $template = $this->messageTemplate(['text_body' => '{{custom_mess}}']);
+
+        $this->actingAs($this->admin);
+
+        Livewire::test(ManageEventMessages::class, [
+            'record' => $this->event->getRouteKey(),
+        ])
+            ->callTableAction('create', data: [
+                'message_template_id' => $template->id,
+                'recipient_task_ids' => [$this->event->tasks()->first()->id],
+            ])
+            ->assertHasTableActionErrors(['custom_message' => 'required']);
 
         $this->assertSame(0, EventMessage::query()->count());
     }
@@ -600,8 +639,7 @@ class EventMessagesTest extends TestCase
             'record' => $this->event->getRouteKey(),
         ])
             ->callTableAction('create', data: [
-                'subject' => 'Note',
-                'text_body' => 'Hi',
+                'message_template_id' => $this->messageTemplate()->id,
                 'recipient_task_ids' => [$secondTask->id],
             ])
             ->assertHasNoTableActionErrors();
@@ -674,8 +712,7 @@ class EventMessagesTest extends TestCase
             'record' => $this->event->getRouteKey(),
         ])
             ->callTableAction('create', data: [
-                'subject' => 'Note',
-                'text_body' => 'Hello',
+                'message_template_id' => $this->messageTemplate()->id,
                 'recipient_task_ids' => [$this->event->tasks()->first()->id],
             ])
             ->assertHasNoTableActionErrors()

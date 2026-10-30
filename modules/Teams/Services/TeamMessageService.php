@@ -3,11 +3,12 @@
 namespace Modules\Teams\Services;
 
 use App\Core\Modules\ChurchModuleManager;
+use App\Models\MessageTemplate;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Support\Collection;
-use Modules\Messaging\Data\OutboundMessageData;
 use Modules\Messaging\Services\MessageSender;
+use Modules\Messaging\Services\TemplateMessages;
 use Modules\Messaging\Support\MessagingAvailability;
 
 class TeamMessageService
@@ -15,6 +16,7 @@ class TeamMessageService
     public function __construct(
         protected MessageSender $sender,
         protected ChurchModuleManager $modules,
+        protected TemplateMessages $templates,
     ) {}
 
     /**
@@ -24,9 +26,9 @@ class TeamMessageService
     public function send(
         Team $team,
         User $author,
-        string $body,
-        ?string $subject,
+        MessageTemplate $template,
         array $recipientUserIds,
+        ?string $customMessage = null,
     ): array {
         if (! $this->modules->isEnabled($team->church, 'teams')) {
             throw new \InvalidArgumentException('Teams module is not enabled.');
@@ -58,14 +60,15 @@ class TeamMessageService
         foreach ($recipients as $recipient) {
             $result = $this->sender->sendToUser(
                 $recipient,
-                new OutboundMessageData(
-                    subject: $subject ?: ('Team: '.$team->name),
-                    body: $body,
-                    templateKey: null,
+                $this->templates->compose(
+                    $template,
+                    $recipient,
+                    $customMessage,
                     meta: [
                         'team_id' => $team->id,
                         'from_user_id' => $author->id,
                     ],
+                    fallbackSubject: 'Team: '.$team->name,
                 ),
             );
 

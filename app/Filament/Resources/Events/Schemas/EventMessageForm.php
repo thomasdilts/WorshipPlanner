@@ -2,15 +2,13 @@
 
 namespace App\Filament\Resources\Events\Schemas;
 
+use App\Filament\Forms\MessageTemplateFields;
 use App\Models\Event;
 use App\Models\EventMessage;
 use App\Models\MessageTemplate;
 use App\Models\User;
 use App\Services\InvitationDeliveryPreview;
 use Filament\Forms\Components\CheckboxList;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ViewField;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\Utilities\Get;
@@ -31,48 +29,7 @@ class EventMessageForm
         $teams = $event->teamTaskOptions();
 
         return [
-            Select::make('message_template_id')
-                ->label(__('Message template'))
-                ->placeholder(__('Write my own message'))
-                ->options(
-                    MessageTemplate::query()
-                        ->where('is_active', true)
-                        ->orderBy('name')
-                        ->pluck('name', 'id')
-                        ->all()
-                )
-                ->searchable()
-                ->nullable()
-                ->live()
-                ->columnSpanFull(),
-            ViewField::make('template_preview')
-                ->hiddenLabel()
-                ->view('filament.messaging.message-preview')
-                ->viewData(function (Get $get): array {
-                    $template = MessageTemplate::query()->find($get('message_template_id'));
-
-                    return [
-                        'subject' => null,
-                        'html' => $template?->body ?? '',
-                        'text' => $template?->text_body,
-                    ];
-                })
-                ->visible(fn (Get $get): bool => filled($get('message_template_id')))
-                ->dehydrated(false)
-                ->columnSpanFull(),
-            TextInput::make('subject')
-                ->label(__('Subject'))
-                ->maxLength(255)
-                ->visible(fn (Get $get): bool => blank($get('message_template_id')))
-                ->columnSpanFull(),
-            Textarea::make('text_body')
-                ->label(__('Message'))
-                ->rows(5)
-                ->maxLength(2000)
-                ->required(fn (Get $get): bool => blank($get('message_template_id')))
-                ->visible(fn (Get $get): bool => blank($get('message_template_id')))
-                ->helperText(__('A link for answering is added at the end automatically.'))
-                ->columnSpanFull(),
+            ...MessageTemplateFields::components(),
             CheckboxList::make('recipient_task_ids')
                 ->label(__('People'))
                 ->options($participants->all())
@@ -109,25 +66,24 @@ class EventMessageForm
 
     /**
      * Creates and immediately sends one message per selected person and task; returns the first for the create action.
-     * A chosen template is used exactly as saved; otherwise the message is the typed subject and text.
+     * The chosen template is used as saved, with {{custom_mess}} replaced by the typed custom message.
      *
      * @param  array<string, mixed>  $data
      */
     public static function create(Event $event, array $data): EventMessage
     {
-        $template = filled($data['message_template_id'] ?? null)
-            ? MessageTemplate::query()->findOrFail($data['message_template_id'])
-            : null;
+        $template = MessageTemplate::query()->findOrFail($data['message_template_id'] ?? null);
 
         return app(EventMessageService::class)->create(
             event: $event,
             author: auth()->user(),
-            body: $template?->body,
-            subject: $template ? $template->subject : ($data['subject'] ?? null),
-            templateId: $template?->id,
+            body: $template->body,
+            subject: $template->subject,
+            templateId: $template->id,
             sendNow: true,
-            textBody: $template ? $template->text_body : ($data['text_body'] ?? null),
+            textBody: $template->text_body,
             recipientTaskIds: static::selectedTaskIds($data['recipient_task_ids'] ?? [], $data['team_task_ids'] ?? []),
+            customMessage: $data['custom_message'] ?? null,
         )->first();
     }
 

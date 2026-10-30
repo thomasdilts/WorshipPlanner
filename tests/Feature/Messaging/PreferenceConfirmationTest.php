@@ -6,9 +6,11 @@ use App\Core\Modules\ChurchModuleManager;
 use App\Core\Tenancy\CurrentChurch;
 use App\Enums\MessagePreference;
 use App\Filament\Pages\EditProfile;
+use App\Filament\Pages\SmsMessagingSettings;
 use App\Filament\Resources\Users\Pages\EditUser;
 use App\Models\Church;
 use App\Models\Language;
+use App\Models\MessageTemplate;
 use App\Models\User;
 use Database\Seeders\LanguagesSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -34,16 +36,25 @@ class PreferenceConfirmationTest extends TestCase
         $this->church = Church::factory()->create();
         $this->seed([RolesAndPermissionsSeeder::class, LanguagesSeeder::class]);
 
+        $confirmation = MessageTemplate::query()->create([
+            'church_id' => $this->church->id,
+            'name' => 'SMS confirmation',
+            'text_body' => 'Hej {{first_name}}, SMS fungerar!',
+            'is_active' => true,
+        ]);
+
         $manager = app(ChurchModuleManager::class);
         $manager->enable($this->church, MessagingAvailability::MODULE_EMAIL);
         $manager->enable($this->church, MessagingAvailability::MODULE_SMS, [
             'api_base' => 'https://api.ip1sms.com/v2',
             'api_token' => $manager->encryptSecret('test-token'),
             'sender' => 'Worship',
+            'confirmation_template_id' => $confirmation->id,
         ]);
 
         $this->user = User::factory()->create([
             'church_id' => $this->church->id,
+            'display_name' => 'Anna Svensson',
             'phone' => '070-123 45 67',
             'message_preference' => MessagePreference::Email,
             'language_id' => Language::query()->where('iso', 'en')->value('id'),
@@ -54,19 +65,81 @@ class PreferenceConfirmationTest extends TestCase
         $this->actingAs($this->user);
     }
 
-    public function test_switching_to_sms_sends_a_confirmation_in_the_chosen_language_before_saving(): void
+    public function test_switching_to_sms_sends_the_confirmation_template_chosen_in_the_sms_settings(): void
     {
         Http::fake(['api.ip1sms.com/*' => Http::response(['id' => 'batch-1'], 200)]);
 
-        $this->saveProfile([
-            'message_preference' => MessagePreference::Sms->value,
-            'language_id' => Language::query()->where('iso', 'sv')->value('id'),
-        ])->assertHasNoFormErrors();
+        $this->saveProfile(['message_preference' => MessagePreference::Sms->value])->assertHasNoFormErrors();
 
         $this->assertSame(MessagePreference::Sms, $this->user->fresh()->message_preference);
         Http::assertSentCount(1);
         Http::assertSent(fn ($request): bool => $request['recipients'] === ['46701234567']
-            && $request['body'] === 'Din föredragna meddelandetyp är SMS');
+            && $request['body'] === 'Hej Anna, SMS fungerar!');
+    }
+
+    public function test_sms_choice_is_refused_when_no_confirmation_template_is_chosen(): void
+    {
+        Http::fake();
+        $manager = app(ChurchModuleManager::class);
+        $manager->updateSettings($this->church, MessagingAvailability::MODULE_SMS, [
+            ...$manager->settings($this->church, MessagingAvailability::MODULE_SMS),
+            'confirmation_template_id' => null,
+        ]);
+
+        $this->saveProfile(['message_preference' => MessagePreference::Sms->value])
+            ->assertHasFormErrors(['message_preference']);
+
+        $this->assertSame(MessagePreference::Email, $this->user->fresh()->message_preference);
+        Http::assertNothingSent();
+    }
+
+    public function test_switching_to_whatsapp_sends_the_meta_template_chosen_in_the_whatsapp_settings_in_the_chosen_language(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'graph.facebook.com/v21.0/111222333/message_templates*' => Http::response(['data' => [
+                ['name' => 'confirm', 'language' => 'en', 'status' => 'APPROVED', 'components' => [['type' => 'BODY', 'text' => 'Hi {{first_name}}']]],
+                ['name' => 'confirm', 'language' => 'sv', 'status' => 'APPROVED', 'components' => [['type' => 'BODY', 'text' => 'Hej {{first_name}}']]],
+            ]]),
+            'graph.facebook.com/v21.0/123456789/messages' => Http::response(['messages' => [['id' => 'wamid.1']]]),
+        ]);
+        $manager = app(ChurchModuleManager::class);
+        $manager->enable($this->church, MessagingAvailability::MODULE_WHATSAPP, [
+            'api_version' => 'v21.0',
+            'access_token' => $manager->encryptSecret('wa-token'),
+            'phone_number_id' => '123456789',
+            'business_account_id' => '111222333',
+            'confirmation_whatsapp_template' => 'confirm',
+        ]);
+
+        $this->saveProfile([
+            'message_preference' => MessagePreference::WhatsApp->value,
+            'language_id' => Language::query()->where('iso', 'sv')->value('id'),
+        ])->assertHasNoFormErrors();
+
+        $this->assertSame(MessagePreference::WhatsApp, $this->user->fresh()->message_preference);
+        Http::assertSent(fn ($request): bool => str_ends_with($request->url(), '/messages')
+            && $request['template']['name'] === 'confirm'
+            && $request['template']['language']['code'] === 'sv'
+            && $request['template']['components'][0]['parameters'][0]['text'] === 'Anna');
+    }
+
+    public function test_whatsapp_choice_is_refused_when_no_confirmation_template_is_chosen(): void
+    {
+        Http::fake();
+        $manager = app(ChurchModuleManager::class);
+        $manager->enable($this->church, MessagingAvailability::MODULE_WHATSAPP, [
+            'api_version' => 'v21.0',
+            'access_token' => $manager->encryptSecret('wa-token'),
+            'phone_number_id' => '123456789',
+            'business_account_id' => '111222333',
+        ]);
+
+        $this->saveProfile(['message_preference' => MessagePreference::WhatsApp->value])
+            ->assertHasFormErrors(['message_preference']);
+
+        $this->assertSame(MessagePreference::Email, $this->user->fresh()->message_preference);
+        Http::assertNothingSent();
     }
 
     public function test_sms_choice_is_refused_when_the_confirmation_fails(): void
@@ -141,6 +214,29 @@ class PreferenceConfirmationTest extends TestCase
 
         $this->assertSame(MessagePreference::Email, $this->user->fresh()->message_preference);
         Http::assertSent(fn ($request): bool => $request['recipients'] === ['46701234567']);
+    }
+
+    public function test_sms_settings_save_the_confirmation_template(): void
+    {
+        $template = MessageTemplate::query()->create([
+            'church_id' => $this->church->id,
+            'name' => 'Another confirmation',
+            'text_body' => 'SMS works',
+            'is_active' => true,
+        ]);
+        $admin = User::factory()->create(['church_id' => $this->church->id]);
+        RolesAndPermissionsSeeder::assignDefaultRoles($admin, 'Church Admin');
+        $this->actingAs($admin);
+
+        Livewire::test(SmsMessagingSettings::class)
+            ->fillForm(['confirmation_template_id' => $template->id])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame(
+            $template->id,
+            app(ChurchModuleManager::class)->settings($this->church, MessagingAvailability::MODULE_SMS)['confirmation_template_id'],
+        );
     }
 
     /**

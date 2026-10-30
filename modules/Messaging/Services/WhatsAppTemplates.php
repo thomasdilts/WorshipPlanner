@@ -6,6 +6,7 @@ use App\Core\Modules\ChurchModuleManager;
 use App\Models\Church;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Modules\Messaging\Support\MessagePlaceholders;
 use Modules\Messaging\Support\MessagingAvailability;
 
 /**
@@ -129,6 +130,21 @@ class WhatsAppTemplates
     }
 
     /**
+     * Whether any version of the template has {{custom_mess}} in its header or body.
+     */
+    public function usesCustomMessage(Church $church, ?string $name): bool
+    {
+        if (blank($name)) {
+            return false;
+        }
+
+        return collect($this->all($church))
+            ->where('name', $name)
+            ->flatMap(fn (array $template): array => $template['components'])
+            ->contains(fn (array $component): bool => MessagePlaceholders::usesCustomMessage((string) ($component['text'] ?? '')));
+    }
+
+    /**
      * Send components with the template's variables filled in.
      *
      * @param  array{components: list<array<string, mixed>>}  $template
@@ -173,11 +189,20 @@ class WhatsAppTemplates
             ->map(fn (string $name): array => [
                 'type' => 'text',
                 'parameter_name' => $name,
-                // Meta refuses empty parameters.
-                'text' => filled($values[$name] ?? null) ? (string) $values[$name] : '-',
+                'text' => $this->parameterText($values[$name] ?? null),
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * Meta refuses empty parameters and parameters with line breaks, tabs or more than four spaces in a row.
+     */
+    protected function parameterText(?string $value): string
+    {
+        $text = trim((string) preg_replace(['/\s*[\r\n\t]+\s*/', '/ {4,}/'], [' ', '   '], (string) $value));
+
+        return $text === '' ? '-' : $text;
     }
 
     /**

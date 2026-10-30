@@ -29,6 +29,7 @@ class EventMessage extends Model
         'subject',
         'body',
         'text_body',
+        'custom_message',
         'status',
         'sent_at',
     ];

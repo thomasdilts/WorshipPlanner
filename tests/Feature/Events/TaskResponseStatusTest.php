@@ -13,6 +13,7 @@ use App\Models\Church;
 use App\Models\Event;
 use App\Models\EventMessage;
 use App\Models\EventTask;
+use App\Models\MessageTemplate;
 use App\Models\TaskTemplate;
 use App\Models\User;
 use App\Services\AssignmentResponder;
@@ -148,7 +149,12 @@ class TaskResponseStatusTest extends TestCase
             ->assertHasNoErrors()
             ->assertActionMounted('sendTaskMessage')
             ->assertSchemaStateSet(['recipient_task_ids' => [$this->task->id]])
-            ->fillForm(['subject' => 'Can you come?', 'text_body' => 'Hi'])
+            ->fillForm(['message_template_id' => MessageTemplate::query()->create([
+                'church_id' => $this->church->id,
+                'name' => 'Ask',
+                'subject' => 'Can you come?',
+                'text_body' => 'Hi',
+            ])->id])
             ->callMountedAction()
             ->assertHasNoFormErrors();
 

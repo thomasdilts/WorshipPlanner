@@ -22,6 +22,7 @@ use Livewire\Livewire;
 use Modules\Messaging\Data\OutboundMessageData;
 use Modules\Messaging\Services\EventMessageService;
 use Modules\Messaging\Services\MessageSender;
+use Modules\Messaging\Services\TemplateMessages;
 use Modules\Messaging\Support\MessagingAvailability;
 use Tests\TestCase;
 
@@ -118,6 +119,55 @@ class WhatsAppTemplatesTest extends TestCase
                 && $components['button0']['parameters'][0]['text'] === $token.'/yes'
                 && $components['button1']['parameters'][0]['text'] === $token.'/no';
         });
+    }
+
+    public function test_custom_message_from_the_meta_template_is_asked_for_and_sent_on_one_line(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            self::TEMPLATES_URL => Http::response(['data' => [[
+                'name' => 'meddelande',
+                'language' => 'sv',
+                'status' => 'APPROVED',
+                'components' => [['type' => 'BODY', 'text' => 'Hej {{first_name}}! {{custom_mess}}']],
+            ]]]),
+            self::MESSAGES_URL => Http::response(['messages' => [['id' => 'wamid.1']]]),
+        ]);
+        $template = MessageTemplate::query()->create([
+            'church_id' => $this->church->id,
+            'name' => 'Message',
+            'text_body' => 'Hello',
+            'whatsapp_template' => 'meddelande',
+            'is_active' => true,
+        ]);
+
+        $this->assertTrue(app(TemplateMessages::class)->usesCustomMessage($template));
+
+        $result = app(MessageSender::class)->sendToUser(
+            $this->member,
+            app(TemplateMessages::class)->compose($template, $this->member, "Rehearsal at 18:00.\n\nBring    your stand."),
+        );
+
+        $this->assertTrue($result->success);
+        Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/messages')
+            && collect($request['template']['components'][0]['parameters'])->pluck('text', 'parameter_name')->get('custom_mess')
+                === 'Rehearsal at 18:00. Bring   your stand.');
+    }
+
+    public function test_message_template_needs_a_meta_template_while_whatsapp_is_on(): void
+    {
+        Http::fake([self::TEMPLATES_URL => Http::response(['data' => [$this->requestReplyTemplate('APPROVED')]])]);
+        $this->actingAs($this->admin);
+
+        Livewire::test(CreateMessageTemplate::class)
+            ->fillForm([
+                'name' => 'Request reply',
+                'text_body' => 'Can you come?',
+            ])
+            ->call('create')
+            ->assertHasFormErrors(['whatsapp_template' => 'required']);
+
+        $this->assertSame(0, MessageTemplate::query()->count());
     }
 
     public function test_template_not_yet_approved_fails_without_sending(): void

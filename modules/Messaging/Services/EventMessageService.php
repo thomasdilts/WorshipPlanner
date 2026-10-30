@@ -52,6 +52,7 @@ class EventMessageService
         array $recipientTeamIds = [],
         ?string $textBody = null,
         array $recipientTaskIds = [],
+        ?string $customMessage = null,
     ): Collection {
         $pairs = $this->preview->recipientPairs($event, $recipientTaskIds, $recipientUserIds, $recipientTeamIds);
 
@@ -63,7 +64,7 @@ class EventMessageService
             throw new \InvalidArgumentException('Write an HTML or a text message.');
         }
 
-        $messages = DB::transaction(fn (): Collection => collect($pairs)->map(function (array $pair) use ($event, $author, $body, $textBody, $subject, $templateId): EventMessage {
+        $messages = DB::transaction(fn (): Collection => collect($pairs)->map(function (array $pair) use ($event, $author, $body, $textBody, $subject, $templateId, $customMessage): EventMessage {
             $message = EventMessage::query()->create([
                 'church_id' => $event->church_id,
                 'event_id' => $event->id,
@@ -73,6 +74,7 @@ class EventMessageService
                 'subject' => $subject,
                 'body' => $body,
                 'text_body' => filled($textBody) ? $textBody : null,
+                'custom_message' => filled($customMessage) ? trim($customMessage) : null,
                 'status' => EventMessage::STATUS_DRAFT,
             ]);
 
@@ -176,8 +178,9 @@ class EventMessageService
     {
         $values = $this->placeholders->valuesFor($recipient, $message->event, $task ? collect([$task]) : collect());
         $links = $this->responseLinks->placeholderValues($task, $recipient);
-        $textValues = [...$values, ...$links['text']];
-        $htmlLinks = $links['html'];
+        $custom = TemplateMessages::customMessageValues($message->custom_message);
+        $textValues = [...$values, ...$custom['text'], ...$links['text']];
+        $htmlLinks = [...$custom['html'], ...$links['html']];
 
         $html = filled(HtmlMessage::toPlainText($message->body))
             ? $this->placeholders->render((string) $message->body, $textValues, escapeHtml: true, htmlValues: $htmlLinks)

@@ -7,6 +7,7 @@ use App\Enums\MessagePreference;
 use App\Filament\Pages\EditProfile;
 use App\Filament\Pages\MessagingSettings;
 use App\Models\Church;
+use App\Models\MessageTemplate;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -80,6 +81,11 @@ class MessagingModuleTest extends TestCase
             'api_base' => 'https://api.ip1sms.com/v2',
             'api_token' => $manager->encryptSecret('test-token'),
             'sender' => 'Worship',
+            'confirmation_template_id' => MessageTemplate::query()->create([
+                'church_id' => $church->id,
+                'name' => 'SMS confirmation',
+                'text_body' => 'SMS works',
+            ])->id,
         ]);
 
         $user = User::factory()->create([
