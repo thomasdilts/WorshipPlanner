@@ -75,8 +75,13 @@ class ManageEventMessages extends ManageRelatedRecords
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['recipients', 'createdBy', 'outboundMessages', 'task.template']))
             ->defaultSort('created_at', 'desc')
             ->columns([
-                TextColumn::make('recipients.display_name')
+                TextColumn::make('recipients')
+                    ->disabledClick()
                     ->label(__('To'))
+                    ->html()
+                    ->state(fn (EventMessage $record): array => $record->recipients
+                        ->map(fn (User $recipient): string => UserAvatar::html($recipient)->toHtml())
+                        ->all())
                     ->listWithLineBreaks()
                     ->limitList(3),
                 TextColumn::make('task_name')
