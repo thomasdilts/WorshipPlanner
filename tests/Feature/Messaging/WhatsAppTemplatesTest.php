@@ -134,6 +134,34 @@ class WhatsAppTemplatesTest extends TestCase
         Http::assertNotSent(fn (Request $request): bool => str_ends_with($request->url(), '/messages'));
     }
 
+    public function test_send_reports_metas_error_when_templates_cannot_be_loaded(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            self::TEMPLATES_URL => Http::response(['error' => ['message' => 'API access blocked.', 'code' => 200]], 400),
+        ]);
+
+        $result = app(MessageSender::class)->sendToUser($this->member, $this->templateMessage(withLinks: true));
+
+        $this->assertFalse($result->success);
+        $this->assertStringStartsWith('WhatsApp templates could not be loaded: WhatsApp API failed (400):', $result->error);
+        $this->assertStringContainsString('API access blocked.', $result->error);
+        Http::assertNotSent(fn (Request $request): bool => str_ends_with($request->url(), '/messages'));
+    }
+
+    public function test_message_template_form_shows_metas_error_when_templates_cannot_be_loaded(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            self::TEMPLATES_URL => Http::response(['error' => ['message' => 'API access blocked.', 'code' => 200]], 400),
+        ]);
+        $this->actingAs($this->admin);
+
+        Livewire::test(CreateMessageTemplate::class)
+            ->assertSee('WhatsApp templates could not be loaded')
+            ->assertSee('API access blocked.');
+    }
+
     public function test_template_with_answer_buttons_fails_when_the_message_has_no_task(): void
     {
         Http::preventStrayRequests();

@@ -734,6 +734,7 @@
     "WhatsApp template": "WhatsApp template",
     "WhatsApp template \":name\" is not approved by Meta yet (status: :status).": "WhatsApp template \":name\" is not approved by Meta yet (status: :status).",
     "WhatsApp template \":name\" was not found. Check the WhatsApp Business Account ID in the WhatsApp settings.": "WhatsApp template \":name\" was not found. Check the WhatsApp Business Account ID in the WhatsApp settings.",
+    "WhatsApp templates could not be loaded: :error": "WhatsApp templates could not be loaded: :error",
     "WhatsApp via Meta. Use the permanent access token and Phone number ID from Meta’s WhatsApp setup.": "WhatsApp via Meta. Use the permanent access token and Phone number ID from Meta’s WhatsApp setup.",
     "When on, a typed title also satisfies a required song (catalog pick still counts).": "When on, a typed title also satisfies a required song (catalog pick still counts).",
     "When planners assign you to an event task, it will show up here.": "When planners assign you to an event task, it will show up here.",

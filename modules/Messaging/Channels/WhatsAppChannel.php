@@ -130,6 +130,12 @@ class WhatsAppChannel implements MessageChannel
         $template = $this->templates->find($church, $name, $recipient->language?->iso);
 
         if ($template === null) {
+            $fetchError = $this->templates->fetchError($church);
+
+            if ($fetchError !== null) {
+                return SendResult::fail($this->key(), __('WhatsApp templates could not be loaded: :error', ['error' => $fetchError]));
+            }
+
             return SendResult::fail($this->key(), __('WhatsApp template ":name" was not found. Check the WhatsApp Business Account ID in the WhatsApp settings.', ['name' => $name]));
         }
 

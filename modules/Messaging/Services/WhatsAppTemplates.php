@@ -22,12 +22,16 @@ class WhatsAppTemplates
 
     protected const BUTTON_LINKS = ['accept_url', 'decline_url'];
 
+    /** @var array<int, string> Why the last template fetch failed, by church ID. */
+    protected array $fetchErrors = [];
+
     public function __construct(
         protected ChurchModuleManager $modules,
     ) {}
 
     /**
-     * Every template on the account; empty when the account ID is missing or Meta cannot be reached.
+     * Every template on the account; empty when the account ID is missing or Meta cannot be reached
+     * (see {@see fetchError()} for why).
      *
      * @return list<array{name: string, language: string, status: string, components: list<array<string, mixed>>}>
      */
@@ -35,6 +39,7 @@ class WhatsAppTemplates
     {
         $settings = $this->modules->settings($church, MessagingAvailability::MODULE_WHATSAPP);
         $accountId = (string) ($settings['business_account_id'] ?? '');
+        unset($this->fetchErrors[$church->id]);
 
         if ($accountId === '') {
             return [];
@@ -56,11 +61,15 @@ class WhatsAppTemplates
                     'fields' => 'name,language,status,components',
                     'limit' => 200,
                 ]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $this->fetchErrors[$church->id] = $e->getMessage();
+
             return [];
         }
 
         if (! $response->successful()) {
+            $this->fetchErrors[$church->id] = 'WhatsApp API failed ('.$response->status().'): '.$response->body();
+
             return [];
         }
 
@@ -77,6 +86,14 @@ class WhatsAppTemplates
         Cache::put($cacheKey, $templates, now()->addMinutes(5));
 
         return $templates;
+    }
+
+    /**
+     * Meta's error from the last {@see all()} call for the church, or null when it succeeded.
+     */
+    public function fetchError(Church $church): ?string
+    {
+        return $this->fetchErrors[$church->id] ?? null;
     }
 
     /**

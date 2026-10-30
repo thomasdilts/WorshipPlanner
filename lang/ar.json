@@ -734,6 +734,7 @@
     "WhatsApp template": "قالب واتساب",
     "WhatsApp template \":name\" is not approved by Meta yet (status: :status).": "قالب واتساب \":name\" لم تعتمده Meta بعد (الحالة: :status).",
     "WhatsApp template \":name\" was not found. Check the WhatsApp Business Account ID in the WhatsApp settings.": "لم يتم العثور على قالب واتساب \":name\". تحقق من معرّف حساب واتساب للأعمال في إعدادات واتساب.",
+    "WhatsApp templates could not be loaded: :error": "تعذّر تحميل قوالب واتساب: :error",
     "WhatsApp via Meta. Use the permanent access token and Phone number ID from Meta’s WhatsApp setup.": "واتساب عبر Meta. استخدم رمز الوصول الدائم ومعرّف رقم الهاتف من إعداد واتساب لدى Meta.",
     "When on, a typed title also satisfies a required song (catalog pick still counts).": "عند التفعيل، يكفي العنوان المكتوب للأغنية الإلزامية (الاختيار من القائمة يُحسب أيضًا).",
     "When planners assign you to an event task, it will show up here.": "عندما يعيّنك المخطّطون لمهمة حدث، ستظهر هنا.",

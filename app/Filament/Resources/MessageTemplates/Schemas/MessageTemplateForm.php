@@ -96,7 +96,7 @@ class MessageTemplateForm
                             ->options(fn (?string $state): array => self::whatsAppTemplateOptions($state))
                             ->searchable()
                             ->placeholder(__('None — send the text message'))
-                            ->helperText(__('Variables use the placeholder names, e.g. {{task}}. Link buttons get {{accept_url}} (first) and {{decline_url}} (second).')),
+                            ->helperText(fn (): string => self::whatsAppTemplateHelp()),
                     ])
                     ->columnSpanFull(),
                 Toggle::make('is_active')
@@ -111,6 +111,24 @@ class MessageTemplateForm
 
         return $church !== null
             && app(ChurchModuleManager::class)->isEnabled($church, MessagingAvailability::MODULE_WHATSAPP);
+    }
+
+    protected static function whatsAppTemplateHelp(): string
+    {
+        $help = __('Variables use the placeholder names, e.g. {{task}}. Link buttons get {{accept_url}} (first) and {{decline_url}} (second).');
+        $church = auth()->user()?->church;
+
+        if ($church === null) {
+            return $help;
+        }
+
+        $templates = app(WhatsAppTemplates::class);
+        $templates->all($church);
+        $fetchError = $templates->fetchError($church);
+
+        return $fetchError === null
+            ? $help
+            : __('WhatsApp templates could not be loaded: :error', ['error' => $fetchError]).' '.$help;
     }
 
     /**

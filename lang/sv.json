@@ -734,6 +734,7 @@
     "WhatsApp template": "WhatsApp-mall",
     "WhatsApp template \":name\" is not approved by Meta yet (status: :status).": "WhatsApp-mallen \":name\" är inte godkänd av Meta än (status: :status).",
     "WhatsApp template \":name\" was not found. Check the WhatsApp Business Account ID in the WhatsApp settings.": "WhatsApp-mallen \":name\" hittades inte. Kontrollera WhatsApp Business-konto-ID i WhatsApp-inställningarna.",
+    "WhatsApp templates could not be loaded: :error": "WhatsApp-mallarna kunde inte hämtas: :error",
     "WhatsApp via Meta. Use the permanent access token and Phone number ID from Meta’s WhatsApp setup.": "WhatsApp via Meta. Använd permanent åtkomsttoken och telefonnummer-ID från Metas WhatsApp-setup.",
     "When on, a typed title also satisfies a required song (catalog pick still counts).": "När på räcker en inmatad titel för obligatorisk sång (val från katalog räknas också).",
     "When planners assign you to an event task, it will show up here.": "När planerare tilldelar dig en evenemangsuppgift visas den här.",
