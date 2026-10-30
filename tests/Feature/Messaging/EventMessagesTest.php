@@ -578,6 +578,25 @@ class EventMessagesTest extends TestCase
         $this->assertStringContainsString("Hi Assignee. Rehearsal starts at 18:00.\nBring <music>.", $composed->plainText());
     }
 
+    public function test_message_sender_is_the_person_who_created_the_message(): void
+    {
+        $this->admin->update(['display_name' => 'Erik Lund']);
+
+        $message = app(EventMessageService::class)->create(
+            event: $this->event,
+            author: $this->admin,
+            body: null,
+            subject: 'From {{message_sender}}',
+            recipientUserIds: [$this->assignee->id],
+            textBody: 'Regards, {{message_sender}}. {{team}}',
+        )->sole();
+
+        $composed = app(EventMessageService::class)->compose($message, $this->assignee, $this->event->tasks()->first());
+
+        $this->assertSame('From Erik Lund', $composed->subject);
+        $this->assertStringContainsString('Regards, Erik Lund. {{team}}', $composed->plainText());
+    }
+
     public function test_custom_message_is_required_when_the_template_has_the_placeholder(): void
     {
         $template = $this->messageTemplate(['text_body' => '{{custom_mess}}']);

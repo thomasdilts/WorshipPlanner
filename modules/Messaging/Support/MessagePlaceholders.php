@@ -19,12 +19,28 @@ class MessagePlaceholders
     /** Replaced with the text the sender types when choosing a template that contains it. */
     public const CUSTOM_MESSAGE = 'custom_mess';
 
+    /** The name of the person sending an event or team message. */
+    public const SENDER = 'message_sender';
+
+    /** The team's name; only filled in for team messages. */
+    public const TEAM = 'team';
+
+    /**
+     * Every placeholder a template can use, in the order the help lists them.
+     *
+     * @return list<string>
+     */
+    public static function templateKeys(): array
+    {
+        return [...self::KEYS, self::SENDER, self::TEAM, self::CUSTOM_MESSAGE];
+    }
+
     /**
      * One-line hint listing every placeholder, for form helper texts.
      */
     public static function hint(): string
     {
-        $tokens = collect([...self::KEYS, self::CUSTOM_MESSAGE, ...self::LINK_KEYS])
+        $tokens = collect([...self::templateKeys(), ...self::LINK_KEYS])
             ->map(fn (string $key): string => '{{'.$key.'}}')
             ->implode(', ');
 

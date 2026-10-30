@@ -69,6 +69,7 @@ class TemplateMessages
      * The template as this recipient gets it, without event or task details.
      *
      * @param  array<string, mixed>  $meta
+     * @param  array<string, string>  $values  Extra placeholder values, e.g. {{message_sender}} and {{team}}.
      */
     public function compose(
         MessageTemplate $template,
@@ -76,9 +77,10 @@ class TemplateMessages
         ?string $customMessage = null,
         array $meta = [],
         ?string $fallbackSubject = null,
+        array $values = [],
     ): OutboundMessageData {
         $custom = self::customMessageValues($customMessage);
-        $values = [...$this->placeholders->valuesFor($recipient, null, collect()), ...$custom['text']];
+        $values = [...$this->placeholders->valuesFor($recipient, null, collect()), ...$values, ...$custom['text']];
 
         $html = filled(HtmlMessage::toPlainText($template->body))
             ? $this->placeholders->render((string) $template->body, $values, escapeHtml: true, htmlValues: $custom['html'])

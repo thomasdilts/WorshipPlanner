@@ -37,7 +37,10 @@ class MessageTemplateFormTest extends TestCase
         Livewire::test(CreateMessageTemplate::class)
             ->assertSuccessful()
             ->assertSee('{{first_name}}')
-            ->assertSee('{{ name }}');
+            ->assertSee('{{ name }}')
+            ->assertSee('{{message_sender}}')
+            ->assertSee('{{team}}')
+            ->assertSee('{{custom_mess}}');
     }
 
     public function test_template_stores_html_and_text_versions(): void

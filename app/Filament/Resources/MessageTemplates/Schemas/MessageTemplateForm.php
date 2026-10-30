@@ -39,7 +39,7 @@ class MessageTemplateForm
                     ->schema([
                         View::make('filament.messaging.placeholder-help')
                             ->viewData([
-                                'placeholders' => [...MessagePlaceholders::KEYS, MessagePlaceholders::CUSTOM_MESSAGE],
+                                'placeholders' => MessagePlaceholders::templateKeys(),
                                 'linkPlaceholders' => MessagePlaceholders::LINK_KEYS,
                             ]),
                     ])

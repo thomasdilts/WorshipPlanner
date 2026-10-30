@@ -882,5 +882,8 @@
     "Sent by WhatsApp when someone chooses WhatsApp as their preferred messaging. The choice is refused if it cannot be sent.": "تُرسل عبر واتساب عندما يختار شخص ما واتساب كطريقة المراسلة المفضلة. يُرفض الاختيار إذا تعذّر إرسالها.",
     "The custom message typed when sending": "الرسالة المخصصة التي تُكتب عند الإرسال",
     "Until one is chosen, nobody can switch to WhatsApp. The templates load once the access token and account ID are saved.": "إلى أن يتم اختيار قالب، لا يمكن لأحد التحويل إلى واتساب. تُحمَّل القوالب بعد حفظ رمز الوصول ومعرّف الحساب.",
-    "WhatsApp only delivers templates approved by Meta, so people who prefer WhatsApp get this approved wording instead of the text above.": "لا يسلّم واتساب إلا القوالب المعتمدة من Meta، لذا يتلقى من يفضّل واتساب هذه الصياغة المعتمدة بدلاً من النص أعلاه."
+    "WhatsApp only delivers templates approved by Meta, so people who prefer WhatsApp get this approved wording instead of the text above.": "لا يسلّم واتساب إلا القوالب المعتمدة من Meta، لذا يتلقى من يفضّل واتساب هذه الصياغة المعتمدة بدلاً من النص أعلاه.",
+    "Name of the person sending the message (event and team messages)": "اسم الشخص الذي يرسل الرسالة (رسائل الفعاليات والفرق)",
+    "Team name — only in messages sent to a team; elsewhere it is left as written": "اسم الفريق — فقط في الرسائل المرسلة إلى فريق؛ وفي غير ذلك يبقى كما هو مكتوب",
+    "Worship team": "فريق التسبيح"
 }

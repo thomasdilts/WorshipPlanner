@@ -27,6 +27,8 @@
         'date' => [__('Event date'), __('Sunday 7 September 2026')],
         'time' => [__('Event start time'), '10:00'],
         'church' => [__('Church name'), __('Your church')],
+        'message_sender' => [__('Name of the person sending the message (event and team messages)'), 'Erik Lund'],
+        'team' => [__('Team name — only in messages sent to a team; elsewhere it is left as written'), __('Worship team')],
         'custom_mess' => [__('The custom message typed when sending'), __('Bring your own music stand.')],
     ];
 @endphp

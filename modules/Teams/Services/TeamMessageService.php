@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 use Modules\Messaging\Services\MessageSender;
 use Modules\Messaging\Services\TemplateMessages;
+use Modules\Messaging\Support\MessagePlaceholders;
 use Modules\Messaging\Support\MessagingAvailability;
 
 class TeamMessageService
@@ -69,6 +70,10 @@ class TeamMessageService
                         'from_user_id' => $author->id,
                     ],
                     fallbackSubject: 'Team: '.$team->name,
+                    values: [
+                        MessagePlaceholders::SENDER => $author->displayName(),
+                        MessagePlaceholders::TEAM => (string) $team->name,
+                    ],
                 ),
             );
 

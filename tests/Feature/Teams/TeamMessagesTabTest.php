@@ -105,7 +105,7 @@ class TeamMessagesTabTest extends TestCase
                     'church_id' => $this->church->id,
                     'name' => 'Team note',
                     'subject' => 'Practice',
-                    'text_body' => 'Hi {{first_name}}: {{custom_mess}}',
+                    'text_body' => 'Hi {{first_name}}: {{custom_mess}} /{{message_sender}}, {{team}}',
                 ])->id,
                 'custom_message' => 'See you at 18:00',
             ])
@@ -114,7 +114,7 @@ class TeamMessagesTabTest extends TestCase
         $message = OutboundMessage::query()->sole();
 
         $this->assertSame('Practice', $message->subject);
-        $this->assertStringContainsString('See you at 18:00', $message->body);
+        $this->assertStringContainsString('See you at 18:00 /Writer, '.$this->team->name, $message->body);
 
         $this->assertSame($this->member->id, $message->user_id);
         $this->assertSame($this->team->id, $message->meta['team_id']);

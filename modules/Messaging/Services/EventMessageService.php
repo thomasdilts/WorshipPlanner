@@ -92,7 +92,7 @@ class EventMessageService
 
     public function send(EventMessage $message): EventMessage
     {
-        $message->loadMissing(['recipients', 'event.tasks.template', 'event.tasks.assignedTeam', 'event.tasks.responses']);
+        $message->loadMissing(['recipients', 'createdBy', 'event.tasks.template', 'event.tasks.assignedTeam', 'event.tasks.responses']);
 
         if ($message->status === EventMessage::STATUS_SENT) {
             return $message;
@@ -179,6 +179,7 @@ class EventMessageService
         $values = $this->placeholders->valuesFor($recipient, $message->event, $task ? collect([$task]) : collect());
         $links = $this->responseLinks->placeholderValues($task, $recipient);
         $custom = TemplateMessages::customMessageValues($message->custom_message);
+        $values[MessagePlaceholders::SENDER] = (string) $message->createdBy?->displayName();
         $textValues = [...$values, ...$custom['text'], ...$links['text']];
         $htmlLinks = [...$custom['html'], ...$links['html']];
 
@@ -221,7 +222,7 @@ class EventMessageService
      */
     public function previews(EventMessage $message): array
     {
-        $message->loadMissing(['recipients', 'event', 'template']);
+        $message->loadMissing(['recipients', 'createdBy', 'event', 'template']);
         $previews = [];
 
         foreach ($message->recipients as $recipient) {

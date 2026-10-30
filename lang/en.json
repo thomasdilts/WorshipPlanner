@@ -882,5 +882,8 @@
     "Sent by WhatsApp when someone chooses WhatsApp as their preferred messaging. The choice is refused if it cannot be sent.": "Sent by WhatsApp when someone chooses WhatsApp as their preferred messaging. The choice is refused if it cannot be sent.",
     "The custom message typed when sending": "The custom message typed when sending",
     "Until one is chosen, nobody can switch to WhatsApp. The templates load once the access token and account ID are saved.": "Until one is chosen, nobody can switch to WhatsApp. The templates load once the access token and account ID are saved.",
-    "WhatsApp only delivers templates approved by Meta, so people who prefer WhatsApp get this approved wording instead of the text above.": "WhatsApp only delivers templates approved by Meta, so people who prefer WhatsApp get this approved wording instead of the text above."
+    "WhatsApp only delivers templates approved by Meta, so people who prefer WhatsApp get this approved wording instead of the text above.": "WhatsApp only delivers templates approved by Meta, so people who prefer WhatsApp get this approved wording instead of the text above.",
+    "Name of the person sending the message (event and team messages)": "Name of the person sending the message (event and team messages)",
+    "Team name — only in messages sent to a team; elsewhere it is left as written": "Team name — only in messages sent to a team; elsewhere it is left as written",
+    "Worship team": "Worship team"
 }
