@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Events\Schemas;
 
+use App\Enums\MessageTemplatePurpose;
 use App\Filament\Forms\MessageTemplateFields;
 use App\Models\Event;
 use App\Models\EventMessage;
@@ -29,7 +30,7 @@ class EventMessageForm
         $teams = $event->teamTaskOptions();
 
         return [
-            ...MessageTemplateFields::components(),
+            ...MessageTemplateFields::components(MessageTemplatePurpose::Service),
             CheckboxList::make('recipient_task_ids')
                 ->label(__('People'))
                 ->options($participants->all())

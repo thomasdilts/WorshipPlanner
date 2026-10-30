@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MessageTemplates\Tables;
 
+use App\Enums\MessageTemplatePurpose;
 use App\Models\MessageTemplate;
 use App\Support\HtmlMessage;
 use Filament\Actions\Action;
@@ -11,6 +12,7 @@ use Filament\Actions\EditAction;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
 class MessageTemplatesTable
@@ -21,6 +23,16 @@ class MessageTemplatesTable
             ->defaultSort('name')
             ->columns([
                 TextColumn::make('name')->searchable()->sortable(),
+                TextColumn::make('purpose')
+                    ->label(__('Used for'))
+                    ->badge()
+                    ->formatStateUsing(fn (MessageTemplatePurpose $state): string => $state->label())
+                    ->color(fn (MessageTemplatePurpose $state): string => match ($state) {
+                        MessageTemplatePurpose::Service => 'primary',
+                        MessageTemplatePurpose::Team => 'success',
+                        MessageTemplatePurpose::Other => 'gray',
+                    })
+                    ->sortable(),
                 TextColumn::make('key')->placeholder('—')->toggleable(),
                 TextColumn::make('subject')->limit(40)->placeholder('—'),
                 TextColumn::make('body')
@@ -36,6 +48,11 @@ class MessageTemplatesTable
                     ->wrap()
                     ->toggleable(),
                 IconColumn::make('is_active')->boolean()->label(__('Active')),
+            ])
+            ->filters([
+                SelectFilter::make('purpose')
+                    ->label(__('Used for'))
+                    ->options(MessageTemplatePurpose::options()),
             ])
             ->recordActions([
                 Action::make('preview')

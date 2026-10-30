@@ -885,5 +885,14 @@
     "WhatsApp only delivers templates approved by Meta, so people who prefer WhatsApp get this approved wording instead of the text above.": "لا يسلّم واتساب إلا القوالب المعتمدة من Meta، لذا يتلقى من يفضّل واتساب هذه الصياغة المعتمدة بدلاً من النص أعلاه.",
     "Name of the person sending the message, or who changed the preferred messaging": "اسم الشخص الذي يرسل الرسالة، أو الذي غيّر طريقة المراسلة المفضلة",
     "Team name — only in messages sent to a team; elsewhere it is left as written": "اسم الفريق — فقط في الرسائل المرسلة إلى فريق؛ وفي غير ذلك يبقى كما هو مكتوب",
-    "Worship team": "فريق التسبيح"
+    "Worship team": "فريق التسبيح",
+    "Service messages": "رسائل الخدمات",
+    "Team messages": "رسائل الفرق",
+    "Other": "أخرى",
+    "Can be chosen when sending a message about a service.": "يمكن اختياره عند إرسال رسالة عن خدمة.",
+    "Can be chosen when sending a message to a team.": "يمكن اختياره عند إرسال رسالة إلى فريق.",
+    "Never offered when sending messages, e.g. the preferred messaging confirmation.": "لا يُعرض أبدًا عند إرسال الرسائل، مثل تأكيد طريقة المراسلة المفضلة.",
+    "Used for": "يُستخدم لـ",
+    "Only templates made for :purpose are listed.": "تُعرض فقط القوالب المخصصة لـ :purpose.",
+    "Templates marked “Other” are listed here.": "تُعرض هنا القوالب المصنفة «أخرى»."
 }

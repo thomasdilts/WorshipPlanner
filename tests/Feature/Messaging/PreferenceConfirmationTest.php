@@ -5,6 +5,7 @@ namespace Tests\Feature\Messaging;
 use App\Core\Modules\ChurchModuleManager;
 use App\Core\Tenancy\CurrentChurch;
 use App\Enums\MessagePreference;
+use App\Enums\MessageTemplatePurpose;
 use App\Filament\Pages\EditProfile;
 use App\Filament\Pages\SmsMessagingSettings;
 use App\Filament\Resources\Users\Pages\EditUser;
@@ -221,6 +222,7 @@ class PreferenceConfirmationTest extends TestCase
         $template = MessageTemplate::query()->create([
             'church_id' => $this->church->id,
             'name' => 'Another confirmation',
+            'purpose' => MessageTemplatePurpose::Other,
             'text_body' => 'SMS works',
             'is_active' => true,
         ]);

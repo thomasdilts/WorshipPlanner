@@ -2,6 +2,7 @@
 
 namespace Modules\Messaging\Services;
 
+use App\Enums\MessageTemplatePurpose;
 use App\Models\MessageTemplate;
 use App\Models\User;
 use App\Support\HtmlMessage;
@@ -20,14 +21,15 @@ class TemplateMessages
     ) {}
 
     /**
-     * Active templates for a select.
+     * Active templates for a select, only those made for the given purpose.
      *
      * @return array<int, string>
      */
-    public function options(): array
+    public function options(MessageTemplatePurpose $purpose): array
     {
         return MessageTemplate::query()
             ->where('is_active', true)
+            ->where('purpose', $purpose)
             ->orderBy('name')
             ->pluck('name', 'id')
             ->all();

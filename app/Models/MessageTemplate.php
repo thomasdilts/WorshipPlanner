@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Core\Tenancy\BelongsToChurch;
+use App\Enums\MessageTemplatePurpose;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,6 +15,7 @@ class MessageTemplate extends Model
         'church_id',
         'name',
         'key',
+        'purpose',
         'subject',
         'body',
         'text_body',
@@ -25,6 +27,7 @@ class MessageTemplate extends Model
     {
         return [
             'is_active' => 'boolean',
+            'purpose' => MessageTemplatePurpose::class,
         ];
     }
 }

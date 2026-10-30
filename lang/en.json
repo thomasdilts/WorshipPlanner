@@ -885,5 +885,14 @@
     "WhatsApp only delivers templates approved by Meta, so people who prefer WhatsApp get this approved wording instead of the text above.": "WhatsApp only delivers templates approved by Meta, so people who prefer WhatsApp get this approved wording instead of the text above.",
     "Name of the person sending the message, or who changed the preferred messaging": "Name of the person sending the message, or who changed the preferred messaging",
     "Team name — only in messages sent to a team; elsewhere it is left as written": "Team name — only in messages sent to a team; elsewhere it is left as written",
-    "Worship team": "Worship team"
+    "Worship team": "Worship team",
+    "Service messages": "Service messages",
+    "Team messages": "Team messages",
+    "Other": "Other",
+    "Can be chosen when sending a message about a service.": "Can be chosen when sending a message about a service.",
+    "Can be chosen when sending a message to a team.": "Can be chosen when sending a message to a team.",
+    "Never offered when sending messages, e.g. the preferred messaging confirmation.": "Never offered when sending messages, e.g. the preferred messaging confirmation.",
+    "Used for": "Used for",
+    "Only templates made for :purpose are listed.": "Only templates made for :purpose are listed.",
+    "Templates marked “Other” are listed here.": "Templates marked “Other” are listed here."
 }

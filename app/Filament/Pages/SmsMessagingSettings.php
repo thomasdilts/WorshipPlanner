@@ -4,6 +4,8 @@ namespace App\Filament\Pages;
 
 use App\Core\Modules\ChurchModuleManager;
 use App\Core\Tenancy\CurrentChurch;
+use App\Enums\MessageTemplatePurpose;
+use App\Models\MessageTemplate;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -115,7 +117,8 @@ class SmsMessagingSettings extends Page
                     ->schema([
                         Select::make('confirmation_template_id')
                             ->label(__('Message template'))
-                            ->options(fn (): array => app(TemplateMessages::class)->options())
+                            ->options(fn (?string $state): array => $this->confirmationTemplateOptions($state))
+                            ->helperText(__('Templates marked “Other” are listed here.'))
                             ->searchable()
                             ->required(),
                     ]),
@@ -138,6 +141,26 @@ class SmsMessagingSettings extends Page
                         ]),
                     ]),
             ]);
+    }
+
+    /**
+     * Templates marked "Other", plus the saved choice so it stays selectable after its purpose changes.
+     *
+     * @return array<int, string>
+     */
+    protected function confirmationTemplateOptions(?string $current): array
+    {
+        $options = app(TemplateMessages::class)->options(MessageTemplatePurpose::Other);
+
+        if (filled($current) && ! array_key_exists((int) $current, $options)) {
+            $saved = MessageTemplate::query()->find($current);
+
+            if ($saved !== null) {
+                $options[$saved->id] = $saved->name;
+            }
+        }
+
+        return $options;
     }
 
     public function save(): void

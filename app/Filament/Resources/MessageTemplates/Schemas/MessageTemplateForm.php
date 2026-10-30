@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\MessageTemplates\Schemas;
 
 use App\Core\Modules\ChurchModuleManager;
+use App\Enums\MessageTemplatePurpose;
 use Filament\Forms\Components\CodeEditor;
 use Filament\Forms\Components\CodeEditor\Enums\Language;
+use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -32,6 +34,13 @@ class MessageTemplateForm
                 TextInput::make('key')
                     ->helperText(__('Optional stable key for code (e.g. task_assigned).'))
                     ->maxLength(100),
+                Radio::make('purpose')
+                    ->label(__('Used for'))
+                    ->options(MessageTemplatePurpose::options())
+                    ->descriptions(MessageTemplatePurpose::descriptions())
+                    ->default(MessageTemplatePurpose::Service->value)
+                    ->required()
+                    ->columnSpanFull(),
                 Section::make(__('Placeholders'))
                     ->description(__('Personalise one template for every recipient.'))
                     ->icon('heroicon-o-information-circle')

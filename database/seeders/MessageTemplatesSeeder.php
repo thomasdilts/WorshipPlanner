@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\MessageTemplatePurpose;
 use App\Models\Church;
 use App\Models\MessageTemplate;
 use Illuminate\Database\Seeder;
@@ -40,7 +41,7 @@ class MessageTemplatesSeeder extends Seeder
     }
 
     /**
-     * @return list<array{name: string, key: string, subject: string, body: string, text_body: string, whatsapp_template: string}>
+     * @return list<array{name: string, key: string, purpose: MessageTemplatePurpose, subject: string, body: string, text_body: string, whatsapp_template: string}>
      */
     public static function templates(): array
     {
@@ -48,6 +49,7 @@ class MessageTemplatesSeeder extends Seeder
             [
                 'name' => 'Kräva svar',
                 'key' => 'krava-svar',
+                'purpose' => MessageTemplatePurpose::Service,
                 'subject' => '{{church}}, {{task}},  {{event}},  {{date}}',
                 'body' => <<<'HTML'
                     <p>Du är schemalagt till att göra uppgiften {{task}} på {{event}}  {{date}}  {{time}}. Var snäll och meddela oss om du kan eller inte kan komma och göra uppgiften igenom att trycka på en av knapparna nedan.</p>
@@ -80,6 +82,7 @@ class MessageTemplatesSeeder extends Seeder
             [
                 'name' => 'Påminnelse endast',
                 'key' => 'paminnelse-endast',
+                'purpose' => MessageTemplatePurpose::Service,
                 'subject' => 'Påminnelse {{task}},  {{event}},  {{date}}',
                 'body' => <<<'HTML'
                     <p>Detta är bara en påminnelse att du är schemalagt till att göra uppgiften {{task}} på {{event}}  {{date}}  {{time}}.</p>
@@ -94,6 +97,7 @@ class MessageTemplatesSeeder extends Seeder
             [
                 'name' => 'Gudstjänst anpassat meddelande',
                 'key' => 'custom_service_mess',
+                'purpose' => MessageTemplatePurpose::Service,
                 'subject' => '{{church}}, {{task}}, {{event}}, {{date}}, uppdatering',
                 'body' => <<<'HTML'
                     <p>Detta är ett anpassat meddelande ifrån {{message_sender}} angående {{task}} på {{event}} {{date}}:</p>
@@ -112,6 +116,7 @@ class MessageTemplatesSeeder extends Seeder
             [
                 'name' => 'Team anpassat meddelande',
                 'key' => 'team_custom_message',
+                'purpose' => MessageTemplatePurpose::Team,
                 'subject' => '{{team}} meddelande',
                 'body' => <<<'HTML'
                     <p>Detta är ett anpassat meddelande ifrån {{message_sender}} till teamet {{team}}:</p>
@@ -130,6 +135,7 @@ class MessageTemplatesSeeder extends Seeder
             [
                 'name' => 'Föredragen meddelandekanal',
                 'key' => 'preferred_messageing',
+                'purpose' => MessageTemplatePurpose::Other,
                 'subject' => "{{message_sender}} har ändrat din 'Föredragen meddelandekanal'",
                 'body' => <<<'HTML'
                     <p>Hej {{first_name}}! {{message_sender}} har ändrat din föredragna meddelandekanal.</p>

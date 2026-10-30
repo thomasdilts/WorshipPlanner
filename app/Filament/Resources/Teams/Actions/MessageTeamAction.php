@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Teams\Actions;
 
+use App\Enums\MessageTemplatePurpose;
 use App\Filament\Forms\MessageTemplateFields;
 use App\Models\MessageTemplate;
 use App\Models\Team;
@@ -45,7 +46,7 @@ class MessageTeamAction
                         ->required()
                         ->columns(2)
                         ->bulkToggleable(),
-                    ...MessageTemplateFields::components(),
+                    ...MessageTemplateFields::components(MessageTemplatePurpose::Team),
                 ];
             })
             ->action(function (array $data) use ($team): void {

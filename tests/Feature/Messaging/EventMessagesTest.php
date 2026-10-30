@@ -5,6 +5,7 @@ namespace Tests\Feature\Messaging;
 use App\Core\Modules\ChurchModuleManager;
 use App\Core\Tenancy\CurrentChurch;
 use App\Enums\MessagePreference;
+use App\Enums\MessageTemplatePurpose;
 use App\Filament\Resources\Events\Pages\EditEvent;
 use App\Filament\Resources\Events\Pages\ManageEventMessages;
 use App\Filament\Resources\Events\RelationManagers\OrderTasksRelationManager;
@@ -547,6 +548,24 @@ class EventMessagesTest extends TestCase
                 'recipient_task_ids' => [$this->event->tasks()->first()->id],
             ])
             ->assertHasTableActionErrors(['message_template_id' => 'required']);
+
+        $this->assertSame(0, EventMessage::query()->count());
+    }
+
+    public function test_only_service_templates_can_be_chosen_for_a_service_message(): void
+    {
+        $this->actingAs($this->admin);
+
+        foreach ([MessageTemplatePurpose::Team, MessageTemplatePurpose::Other] as $purpose) {
+            Livewire::test(ManageEventMessages::class, [
+                'record' => $this->event->getRouteKey(),
+            ])
+                ->callTableAction('create', data: [
+                    'message_template_id' => $this->messageTemplate(['purpose' => $purpose])->id,
+                    'recipient_task_ids' => [$this->event->tasks()->first()->id],
+                ])
+                ->assertHasTableActionErrors(['message_template_id']);
+        }
 
         $this->assertSame(0, EventMessage::query()->count());
     }

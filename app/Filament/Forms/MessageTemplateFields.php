@@ -2,6 +2,7 @@
 
 namespace App\Filament\Forms;
 
+use App\Enums\MessageTemplatePurpose;
 use App\Models\MessageTemplate;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -18,12 +19,13 @@ class MessageTemplateFields
     /**
      * @return list<Component>
      */
-    public static function components(): array
+    public static function components(MessageTemplatePurpose $purpose): array
     {
         return [
             Select::make('message_template_id')
                 ->label(__('Message template'))
-                ->options(fn (): array => app(TemplateMessages::class)->options())
+                ->options(fn (): array => app(TemplateMessages::class)->options($purpose))
+                ->helperText(__('Only templates made for :purpose are listed.', ['purpose' => mb_strtolower($purpose->label())]))
                 ->searchable()
                 ->required()
                 ->live()

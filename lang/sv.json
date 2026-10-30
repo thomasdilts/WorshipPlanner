@@ -885,5 +885,14 @@
     "WhatsApp only delivers templates approved by Meta, so people who prefer WhatsApp get this approved wording instead of the text above.": "WhatsApp levererar bara mallar som godkänts av Meta, så den som föredrar WhatsApp får den godkända texten i stället för texten ovan.",
     "Name of the person sending the message, or who changed the preferred messaging": "Namnet på den som skickar meddelandet, eller som ändrade föredragen meddelandetyp",
     "Team name — only in messages sent to a team; elsewhere it is left as written": "Teamets namn — bara i meddelanden som skickas till ett team; annars lämnas det som det står",
-    "Worship team": "Lovsångsteamet"
+    "Worship team": "Lovsångsteamet",
+    "Service messages": "Gudstjänstmeddelanden",
+    "Team messages": "Teammeddelanden",
+    "Other": "Övrigt",
+    "Can be chosen when sending a message about a service.": "Kan väljas när man skickar ett meddelande om en gudstjänst.",
+    "Can be chosen when sending a message to a team.": "Kan väljas när man skickar ett meddelande till ett team.",
+    "Never offered when sending messages, e.g. the preferred messaging confirmation.": "Visas aldrig när man skickar meddelanden, t.ex. bekräftelsen av föredragen meddelandetyp.",
+    "Used for": "Används till",
+    "Only templates made for :purpose are listed.": "Bara mallar för :purpose visas.",
+    "Templates marked “Other” are listed here.": "Här visas mallar som är markerade ”Övrigt”."
 }

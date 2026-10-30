@@ -4,6 +4,7 @@ namespace Tests\Feature\Teams;
 
 use App\Core\Modules\ChurchModuleManager;
 use App\Core\Tenancy\CurrentChurch;
+use App\Enums\MessageTemplatePurpose;
 use App\Filament\Resources\Teams\Pages\EditTeam;
 use App\Filament\Resources\Teams\RelationManagers\MessagesRelationManager;
 use App\Models\Church;
@@ -104,6 +105,7 @@ class TeamMessagesTabTest extends TestCase
                 'message_template_id' => MessageTemplate::query()->create([
                     'church_id' => $this->church->id,
                     'name' => 'Team note',
+                    'purpose' => MessageTemplatePurpose::Team,
                     'subject' => 'Practice',
                     'text_body' => 'Hi {{first_name}}: {{custom_mess}} /{{message_sender}}, {{team}}',
                 ])->id,
@@ -121,6 +123,26 @@ class TeamMessagesTabTest extends TestCase
         $this->assertSame($writer->id, $message->meta['from_user_id']);
 
         $this->messagesTab()->assertCanSeeTableRecords([$message]);
+    }
+
+    public function test_only_team_templates_can_be_chosen_for_a_team_message(): void
+    {
+        $this->actingAs($this->admin);
+        $serviceTemplate = MessageTemplate::query()->create([
+            'church_id' => $this->church->id,
+            'name' => 'Service note',
+            'purpose' => MessageTemplatePurpose::Service,
+            'text_body' => 'Hi',
+        ]);
+
+        $this->messagesTab()
+            ->callAction(TestAction::make('messageTeam')->table(), data: [
+                'recipient_ids' => [$this->member->id],
+                'message_template_id' => $serviceTemplate->id,
+            ])
+            ->assertHasActionErrors(['message_template_id']);
+
+        $this->assertSame(0, OutboundMessage::query()->count());
     }
 
     protected function outbound(User $user, string $channel, string $status, ?string $error = null, string $body = 'Hello', ?int $teamId = -1): OutboundMessage

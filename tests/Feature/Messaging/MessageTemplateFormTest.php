@@ -4,6 +4,7 @@ namespace Tests\Feature\Messaging;
 
 use App\Core\Modules\ChurchModuleManager;
 use App\Core\Tenancy\CurrentChurch;
+use App\Enums\MessageTemplatePurpose;
 use App\Filament\Resources\MessageTemplates\Pages\CreateMessageTemplate;
 use App\Models\Church;
 use App\Models\MessageTemplate;
@@ -51,12 +52,14 @@ class MessageTemplateFormTest extends TestCase
                 'subject' => 'See you {{date}}',
                 'body' => '<p>Hi <strong>{{first_name}}</strong></p>',
                 'text_body' => 'Hi {{first_name}}',
+                'purpose' => MessageTemplatePurpose::Team->value,
             ])
             ->call('create')
             ->assertHasNoFormErrors();
 
         $template = MessageTemplate::query()->sole();
 
+        $this->assertSame(MessageTemplatePurpose::Team, $template->purpose);
         $this->assertSame('<p>Hi <strong>{{first_name}}</strong></p>', $template->body);
         $this->assertSame('Hi {{first_name}}', $template->text_body);
     }
