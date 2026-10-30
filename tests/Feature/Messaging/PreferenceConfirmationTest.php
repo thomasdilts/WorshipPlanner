@@ -39,7 +39,7 @@ class PreferenceConfirmationTest extends TestCase
         $confirmation = MessageTemplate::query()->create([
             'church_id' => $this->church->id,
             'name' => 'SMS confirmation',
-            'text_body' => 'Hej {{first_name}}, SMS fungerar!',
+            'text_body' => 'Hej {{first_name}}, SMS fungerar! /{{message_sender}}',
             'is_active' => true,
         ]);
 
@@ -74,7 +74,7 @@ class PreferenceConfirmationTest extends TestCase
         $this->assertSame(MessagePreference::Sms, $this->user->fresh()->message_preference);
         Http::assertSentCount(1);
         Http::assertSent(fn ($request): bool => $request['recipients'] === ['46701234567']
-            && $request['body'] === 'Hej Anna, SMS fungerar!');
+            && $request['body'] === 'Hej Anna, SMS fungerar! /Anna Svensson');
     }
 
     public function test_sms_choice_is_refused_when_no_confirmation_template_is_chosen(): void

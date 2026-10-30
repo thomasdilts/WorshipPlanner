@@ -65,7 +65,12 @@ class PreferenceConfirmation
             return SendResult::fail(MessagePreference::Sms->value, __('No confirmation template is chosen in the SMS settings.'));
         }
 
-        return $this->templates->compose($template, $recipient, meta: ['kind' => 'preference_confirmation']);
+        return $this->templates->compose(
+            $template,
+            $recipient,
+            meta: ['kind' => 'preference_confirmation'],
+            values: $this->senderValues($recipient),
+        );
     }
 
     protected function whatsAppMessage(User $recipient): OutboundMessageData|SendResult
@@ -86,8 +91,20 @@ class PreferenceConfirmation
             body: $builtIn->body,
             templateKey: 'preference_confirmation',
             whatsappTemplate: $name,
-            placeholders: $this->placeholders->valuesFor($recipient, null, collect()),
+            placeholders: [...$this->placeholders->valuesFor($recipient, null, collect()), ...$this->senderValues($recipient)],
         );
+    }
+
+    /**
+     * {{message_sender}} is whoever changed the preference: the person themselves or an admin.
+     *
+     * @return array<string, string>
+     */
+    protected function senderValues(User $recipient): array
+    {
+        $sender = auth()->user();
+
+        return [MessagePlaceholders::SENDER => $sender instanceof User ? $sender->displayName() : $recipient->displayName()];
     }
 
     protected function builtInMessage(MessagePreference $preference): OutboundMessageData

@@ -883,7 +883,7 @@
     "The custom message typed when sending": "Det egna meddelandet som skrivs vid sändning",
     "Until one is chosen, nobody can switch to WhatsApp. The templates load once the access token and account ID are saved.": "Tills en mall är vald kan ingen byta till WhatsApp. Mallarna hämtas när åtkomsttoken och konto-ID har sparats.",
     "WhatsApp only delivers templates approved by Meta, so people who prefer WhatsApp get this approved wording instead of the text above.": "WhatsApp levererar bara mallar som godkänts av Meta, så den som föredrar WhatsApp får den godkända texten i stället för texten ovan.",
-    "Name of the person sending the message (event and team messages)": "Namnet på den som skickar meddelandet (event- och teammeddelanden)",
+    "Name of the person sending the message, or who changed the preferred messaging": "Namnet på den som skickar meddelandet, eller som ändrade föredragen meddelandetyp",
     "Team name — only in messages sent to a team; elsewhere it is left as written": "Teamets namn — bara i meddelanden som skickas till ett team; annars lämnas det som det står",
     "Worship team": "Lovsångsteamet"
 }
